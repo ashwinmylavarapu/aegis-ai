@@ -43,6 +43,7 @@ async def executor_step(state: AegisState):
         elif action_name == 'click': await browser.click(args['selector'])
         elif action_name == 'get_page_content': observation = await browser.get_page_content()
         elif action_name == 'wait': await browser.wait(args['duration_seconds'])
+        elif action_name == 'scroll': await browser.scroll(args['direction'])
         
         if not observation: observation = f"Action '{action_name}' completed successfully."
     except Exception as e:

@@ -1,5 +1,5 @@
 logging:
-  level: "DEBUG"
+  level: "WARNING"
 
 llm:
   provider: "google_genai_studio"

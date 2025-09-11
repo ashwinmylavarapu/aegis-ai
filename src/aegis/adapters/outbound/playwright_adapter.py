@@ -80,13 +80,20 @@ class PlaywrightAdapter(BrowserAdapter):
         await self.connect()
         logger.info(f"[BROWSER] Pressing key '{key}' on '{selector}'")
         await self._page.press(selector, key)
-
-    # --- FIX: Add the missing 'wait' method implementation ---
+        
     async def wait(self, duration_seconds: int):
-        await self.connect()
-        logger.info(f"[ACTION] Waiting for {duration_seconds} seconds...")
+        logger.info(f"Waiting for {duration_seconds} seconds...")
         await asyncio.sleep(duration_seconds)
-    # --- END FIX ---
+
+    async def scroll(self, direction: str):
+        await self.connect()
+        logger.info(f"Scrolling page {direction}")
+        if direction == "down":
+            await self._page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+        elif direction == "up":
+            await self._page.evaluate("window.scrollTo(0, 0)")
+        # Add a small delay to allow content to load after scrolling
+        await asyncio.sleep(2)
         
     async def wait_for_element(self, selector: str, timeout: int = 15000):
         await self.connect()
@@ -97,16 +104,9 @@ class PlaywrightAdapter(BrowserAdapter):
         await self.connect()
         logger.info(f"Extracting data from '{selector}' (limit: {limit})")
         
-        field_to_selector_map = {
-            "title": "h3.base-search-card__title",
-            "company": "h4.base-search-card__subtitle",
-            "location": ".job-search-card__location",
-            "url": "a.base-card__full-link"
-        }
-
+        field_to_selector_map = {"title": "h3.base-search-card__title", "company": "h4.base-search-card__subtitle", "location": ".job-search-card__location", "url": "a.base-card__full-link"}
         results = []
         elements = await self._page.query_selector_all(selector)
-        
         for i, element in enumerate(elements):
             if i >= limit: break
             item_data = {}
@@ -115,11 +115,7 @@ class PlaywrightAdapter(BrowserAdapter):
                     css_selector = field_to_selector_map.get(field)
                     if not css_selector: item_data[field] = None; continue
                     sub_element = await element.query_selector(css_selector)
-                    if field == "url":
-                        item_data[field] = await sub_element.get_attribute('href') if sub_element else None
-                    else:
-                        item_data[field] = await sub_element.inner_text() if sub_element else None
-                except Exception:
-                    item_data[field] = None
+                    item_data[field] = await sub_element.get_attribute('href') if field == "url" and sub_element else await sub_element.inner_text() if sub_element else None
+                except Exception: item_data[field] = None
             results.append(item_data)
         return results

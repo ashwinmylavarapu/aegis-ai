@@ -33,6 +33,7 @@ class GoogleGenAIAdapter(LLMAdapter):
             FunctionDeclaration(name="click", description="Clicks an element.", parameters={"type": "object", "properties": {"selector": {"type": "string"}}, "required": ["selector"]}),
             FunctionDeclaration(name="press_key", description="Presses a key on an element.", parameters={"type": "object", "properties": {"selector": {"type": "string"},"key": {"type": "string"}}, "required": ["selector", "key"]}),
             FunctionDeclaration(name="wait", description="Pauses execution for a specified number of seconds.", parameters={"type": "object", "properties": {"duration_seconds": {"type": "integer"}}, "required": ["duration_seconds"]}),
+            FunctionDeclaration(name="scroll", description="Scrolls the page up or down.", parameters={"type": "object", "properties": {"direction": {"type": "string", "enum": ["up", "down"]}}, "required": ["direction"]}),
             FunctionDeclaration(name="finish_task", description="Call when the goal is fully accomplished.", parameters={"type": "object", "properties": {"summary": {"type": "string"}}, "required": ["summary"]}),
         ]
         
@@ -41,8 +42,8 @@ class GoogleGenAIAdapter(LLMAdapter):
             "1. **Look**: Use `get_page_content` to understand the page. "
             "2. **Think**: Decide the next action. "
             "3. **Act**: Execute the action (`type_text`, `click`, etc.). "
-            "**IMPORTANT**: For long-running tasks like starting a machine, you MUST use the `wait` tool to pause for 30-60 seconds *before* using `get_page_content` again to check for the result. "
-            "If an action fails, use `get_page_content` again to re-evaluate. If stuck, use `finish_task` to report the failure."
+            "**IMPORTANT**: To see more content on a social media feed or long page, you MUST use the `scroll` tool with `direction: 'down'` to load more items. After scrolling, you must use `get_page_content` again to see the new items. "
+            "If stuck, use `finish_task` to report failure."
         )
 
         self.model = genai.GenerativeModel(model_name, tools=tool_declarations, system_instruction=self.system_instruction)
