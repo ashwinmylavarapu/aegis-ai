@@ -1,0 +1,11 @@
+llm:
+  provider: "openai"
+
+  google_genai_studio:
+    model: "gemini-pro"
+    api_key: "YOUR_GOOGLE_API_KEY" # Replace with your actual key
+
+  openai:
+    model: "Gemini-2.5-Flash"
+    api_key: "YOUR_OPENAI_API_KEY" # Replace with your actual key
+    base_url: "https://api.poe.com/v1" # Optional, for proxy
