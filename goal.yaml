@@ -1,5 +1,8 @@
-run_id: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
-description: "Find Python jobs on our internal jobs board."
+run_id: "paperspace-notebook-start-01"
+description: "Start a Paperspace notebook and navigate to the terminal."
 goal_type: natural_language
 prompt: |
-  goto linkedin.
+  1. Go to https://console.paperspace.com/twkqachca0/notebook/rvkyqnrn0uiltpy
+  2. Click the start machine button.
+  3. Wait for the stop machine button to appear.
+  4. On the left navigation bar, click on Terminals.

@@ -1,4 +1,3 @@
-import subprocess
 import asyncio
 from typing import Dict, Any
 from loguru import logger
@@ -6,44 +5,16 @@ from fastmcp import Client
 
 class BrowserMCPAdapter:
     def __init__(self, config: Dict[str, Any]):
-        self.process = None
         self.client = None
+        self.is_connected = False  # Track connection state explicitly
         self.config = config.get("browser_mcp", {})
-        self._log_streaming_tasks = []
-
-    async def _log_server_output(self, stream, log_prefix):
-        """Reads and logs output from a stream line by line."""
-        while not stream.at_eof():
-            line = await stream.readline()
-            if line:
-                logger.debug(f"BrowserMCP Server {log_prefix}: {line.decode().strip()}")
-
-    async def _start_server(self):
-        logger.info("Starting BrowserMCP server...")
-        self.process = await asyncio.create_subprocess_exec(
-            "npx", "@browsermcp/mcp@latest",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        logger.info("Waiting for BrowserMCP server to initialize...")
-
-        # Start background tasks to stream logs
-        self._log_streaming_tasks.append(
-            asyncio.create_task(self._log_server_output(self.process.stdout, 'STDOUT'))
-        )
-        self._log_streaming_tasks.append(
-            asyncio.create_task(self._log_server_output(self.process.stderr, 'STDERR'))
-        )
-
-        await asyncio.sleep(10)  # Give server time to start
-        logger.info("BrowserMCP server should be started.")
 
     async def connect(self):
-        if self.client is None:
-            await self._start_server()
-            
+        # We only connect if we haven't already.
+        # The server is now assumed to be running, managed by the Chrome Extension.
+        if not self.is_connected:
             mcp_url = self.config.get("url", "http://localhost:6279/mcp/")
-            logger.info(f"Attempting to connect to BrowserMCP at: {mcp_url}")
+            logger.info(f"Attempting to connect to pre-existing BrowserMCP server at: {mcp_url}")
 
             client_config = {
                 "mcpServers": {
@@ -53,11 +24,11 @@ class BrowserMCPAdapter:
             self.client = Client(client_config)
             try:
                 await self.client.__aenter__()
-                logger.success("Connected to BrowserMCP client.")
+                self.is_connected = True  # Set state to connected only on success
+                logger.success("Connected to BrowserMCP server.")
             except Exception as e:
-                logger.error(f"Failed to connect to BrowserMCP client: {e}")
-                # The background tasks are already logging the output.
-                # No need to read stdout/stderr here.
+                logger.error(f"Failed to connect to BrowserMCP server: {e}")
+                # Re-raise the exception to signal failure to the orchestrator
                 raise
 
     async def navigate(self, url: str):
@@ -83,6 +54,7 @@ class BrowserMCPAdapter:
     async def extract_data(self, selector: str, fields: list, limit: int):
         await self.connect()
         logger.info(f"[BROWSER] Extracting data from '{selector}' (limit: {limit})")
+        # This remains a mock until we can successfully connect and interact
         return [
             {"title": "Senior Python Developer", "team": "Platform", "url": "https://jobs.our-company.com/jobs/1"},
             {"title": "Python Developer", "team": "Data Science", "url": "https://jobs.our-company.com/jobs/2"},
@@ -90,20 +62,11 @@ class BrowserMCPAdapter:
         ]
 
     async def close(self):
-        if self.client:
-            logger.info("Closing BrowserMCP client...")
+        if self.client and self.is_connected:
+            logger.info("Closing BrowserMCP client connection...")
             await self.client.__aexit__(None, None, None)
-        
-        # Cancel the log streaming tasks
-        for task in self._log_streaming_tasks:
-            task.cancel()
-        await asyncio.gather(*self._log_streaming_tasks, return_exceptions=True)
-
-        if self.process and self.process.returncode is None:
-            logger.info("Terminating BrowserMCP server process...")
-            self.process.terminate()
-            await self.process.wait()
-            logger.info("BrowserMCP server process terminated.")
+            self.is_connected = False
+            logger.info("BrowserMCP client connection closed.")
 
 _browser_adapter_instance = None
 

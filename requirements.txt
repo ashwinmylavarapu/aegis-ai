@@ -2,7 +2,6 @@ langgraph
 pydantic
 click
 fastapi
-websockets
 uvicorn[standard]
 opentelemetry-api
 opentelemetry-sdk
@@ -13,5 +12,5 @@ pytest
 mutmut
 google-generativeai
 openai
-fastmcp
 loguru
+playwright

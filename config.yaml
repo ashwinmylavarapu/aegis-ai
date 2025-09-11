@@ -1,15 +1,21 @@
+logging:
+  level: "DEBUG"
+
 llm:
-  provider: "openai"
+  provider: "google_genai_studio"
 
   google_genai_studio:
-    model: "gemini-pro"
-    api_key: "YOUR_GOOGLE_API_KEY" # Replace with your actual key
+    model: "gemini-2.5-flash"
+    api_key: "AIzaSyAUQhDu4_Y8wLjmFXN9gWhlDCJ3-Dey4-s" # Replace with your actual key
 
   openai:
     model: "Gemini-2.5-Flash"
     api_key: "kQMgOqm4E1QF80V3UZY_Yqiu-w3pEi_k7P_KV19m8oY" # Replace with your actual key
     base_url: "https://api.poe.com/v1" # Optional, for proxy
 
-browser_mcp:
-  websocket_url: "ws://localhost:6279"
-  auth_token: "YOUR_BROWSERMCP_AUTH_TOKEN" # Replace with your actual token
+browser:
+  adapter: "playwright" # Can be "playwright" or "noop"
+  playwright:
+    cdp_endpoint: "http://localhost:9222" # Default Chrome debugging port
+
+# The browser_mcp section is no longer needed and can be removed.
