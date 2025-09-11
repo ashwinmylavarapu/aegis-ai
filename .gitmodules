@@ -1,0 +1,3 @@
+[submodule "external/browsermcp"]
+	path = external/browsermcp
+	url = https://github.com/browsermcp/mcp
