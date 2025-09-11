@@ -9,3 +9,7 @@ llm:
     model: "Gemini-2.5-Flash"
     api_key: "YOUR_OPENAI_API_KEY" # Replace with your actual key
     base_url: "https://api.poe.com/v1" # Optional, for proxy
+
+browser_mcp:
+  websocket_url: "ws://localhost:6279"
+  auth_token: "YOUR_BROWSERMCP_AUTH_TOKEN" # Replace with your actual token

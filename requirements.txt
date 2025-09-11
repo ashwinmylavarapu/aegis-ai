@@ -11,3 +11,6 @@ opa-python-client
 python-dotenv
 pytest
 mutmut
+google-generativeai
+openai
+fastmcp

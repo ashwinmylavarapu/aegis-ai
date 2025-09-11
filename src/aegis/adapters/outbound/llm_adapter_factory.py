@@ -1,29 +1,28 @@
 """
-Factory to get the configured LLM adapter.
+LLM Adapter Factory
 """
-from typing import List, Dict, Any
 
-class LLMAdapter:
-    """Placeholder for the real LLM adapter."""
-    def generate_plan(self, goal: str) -> List[Dict[str, Any]]:
-        print(f"--- Mock LLM: Generating plan for goal: {goal[:50]}...")
-        # This is a mock plan that aligns with the example in the arch doc
+class MockLLMAdapter:
+    """A mock LLM adapter that returns a hardcoded plan."""
+    def generate_plan(self, prompt: str):
+        print("    (Using MockLLMAdapter to generate a hardcoded plan)")
         return [
-            { "skill": "internal_auth.login" },
-            { "action": "navigate", "url": "https://jobs.our-company.com/search" },
-            { "action": "type_text", "selector": "#search-keyword-input", "text": "Senior Python Developer" },
-            { "action": "click", "selector": "button[type='submit']" },
-            { "action": "wait_for_element", "selector": ".search-results-list" },
-            { 
-              "action": "extract_data", 
-              "selector": ".job-result-card", 
-              "limit": 3, 
-              "fields": ["title", "team", "url"],
-              "output_file": "job_results.csv"
+            {"skill": "internal_auth.login"},
+            {"action": "navigate", "url": "https://jobs.our-company.com/search"},
+            {"action": "type_text", "selector": "#search-keyword-input", "text": "Senior Python Developer"},
+            {"action": "click", "selector": "button[type='submit']"},
+            {"action": "wait_for_element", "selector": ".search-results-list"},
+            {
+                "action": "extract_data",
+                "selector": ".job-result-card",
+                "limit": 3,
+                "fields": ["title", "team", "url"],
+                "output_file": "job_results.csv"
             }
         ]
 
 def get_llm_adapter():
-    """Returns a singleton instance of the LLM adapter."""
-    # In a real app, this would read config and instantiate the correct adapter.
-    return LLMAdapter()
+    """Factory function to get the configured LLM adapter."""
+    # In a real scenario, this would read a config file.
+    # For now, it returns the mock adapter.
+    return MockLLMAdapter()

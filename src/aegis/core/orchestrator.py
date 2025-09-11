@@ -93,7 +93,7 @@ def plan_locker_step(state: AegisState):
     # In a real system, we would save this to plan.lock.json
     return {"locked_plan": locked_plan}
 
-def executor_step(state: AegisState):
+async def executor_step(state: AegisState):
     print(">>> In executor_step")
     log = state.get('execution_log', [])
     plan = state['locked_plan']
@@ -108,15 +108,15 @@ def executor_step(state: AegisState):
                 # Skill expansion would happen here. For now, just log it.
                 log.append(f"    Expanding and executing skill '{step.skill}'...")
             elif step.action == 'navigate':
-                browser.navigate(step.url)
+                await browser.navigate(step.url)
             elif step.action == 'type_text':
-                browser.type_text(step.selector, step.text)
+                await browser.type_text(step.selector, step.text)
             elif step.action == 'click':
-                browser.click(step.selector)
+                await browser.click(step.selector)
             elif step.action == 'wait_for_element':
-                browser.wait_for_element(step.selector)
+                await browser.wait_for_element(step.selector)
             elif step.action == 'extract_data':
-                data = browser.extract_data(step.selector, step.fields, step.limit)
+                data = await browser.extract_data(step.selector, step.fields, step.limit)
                 log.append(f"    Extracted data: {data}")
             else:
                 raise ValueError(f"Unknown action: {step.action}")
@@ -174,7 +174,7 @@ class Orchestrator:
 
         return workflow.compile()
 
-    def run(self, goal: Goal):
+    async def run(self, goal: Goal):
         initial_state = {
             "run_id": goal.run_id,
             "goal": goal,
@@ -185,4 +185,4 @@ class Orchestrator:
             "execution_log": [],
             "result": None,
         }
-        return self.workflow.invoke(initial_state)
+        return await self.workflow.ainvoke(initial_state)

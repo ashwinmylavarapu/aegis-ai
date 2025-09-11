@@ -1,5 +1,6 @@
 import click
 import yaml
+import asyncio
 from aegis.core.orchestrator import Orchestrator
 from aegis.core.models import Goal
 
@@ -30,7 +31,7 @@ def run(goal_file: str):
         return
 
     orchestrator = Orchestrator()
-    final_state = orchestrator.run(goal=goal)
+    final_state = asyncio.run(orchestrator.run(goal=goal))
 
     click.echo("\nOrchestrator finished.")
     click.echo("--- Final State ---")
