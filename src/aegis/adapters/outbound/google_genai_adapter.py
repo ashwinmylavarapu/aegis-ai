@@ -9,33 +9,15 @@ def convert_history_to_gemini(history: List[Dict[str, Any]]) -> List[Dict[str, A
     gemini_history = []
     for message in history:
         role = message["role"]
-        
         if role == "assistant":
             parts = []
-            for tool_call in message.get("tool_calls", []):
-                func = tool_call.get("function", {})
-                gemini_func_call = {
-                    "name": func.get("name"),
-                    "args": json.loads(func.get("arguments", '{}'))
-                }
-                parts.append({'function_call': gemini_func_call})
-            
-            if parts:
-                gemini_history.append({'role': 'model', 'parts': parts})
-
+            for tc in message.get("tool_calls", []):
+                func = tc.get("function", {})
+                parts.append({'function_call': {"name": func.get("name"), "args": json.loads(func.get("arguments", '{}'))}})
+            if parts: gemini_history.append({'role': 'model', 'parts': parts})
         elif role == "tool":
-            gemini_history.append({
-                'role': 'function',
-                'parts': [{
-                    'function_response': {
-                        'name': message.get('name'), 
-                        'response': {'content': message.get('content')}
-                    }
-                }]
-            })
-
+            gemini_history.append({'role': 'function', 'parts': [{'function_response': {'name': message.get('name'), 'response': {'content': message.get('content')}}}]})
     return gemini_history
-
 
 class GoogleGenAIAdapter(LLMAdapter):
     def __init__(self, config: Dict[str, Any]):
@@ -44,36 +26,24 @@ class GoogleGenAIAdapter(LLMAdapter):
         if not api_key: raise ValueError("Google GenAI config missing 'api_key' in config.yaml")
         genai.configure(api_key=api_key)
         
-        # --- FIX: Update tool definitions and system prompt ---
         tool_declarations = [
-            FunctionDeclaration(name="navigate", description="Navigates to a URL.", parameters={"type": "object", "properties": {"url": {"type": "string"}}}),
-            FunctionDeclaration(name="search_jobs", description="Performs a job search on a site like LinkedIn.", parameters={"type": "object", "properties": {"query": {"type": "string"}}}),
-            FunctionDeclaration(
-                name="wait_for_element",
-                description="Waits for an element to appear on the page.",
-                parameters={"type": "object", "properties": {
-                    "selector": {"type": "string"},
-                    "timeout": {"type": "integer", "description": "Optional wait time in milliseconds (e.g., 60000 for 60 seconds)."}
-                }},
-            ),
-            FunctionDeclaration(
-                name="extract_data",
-                description="Extracts data from a list of elements.",
-                parameters={"type": "object", "properties": {
-                    "selector": {"type": "string", "description": "CSS selector for each item in the list."},
-                    "limit": {"type": "integer"},
-                    "fields": {"type": "array", "items": {"type": "string"}, "description": "Names of data to extract, e.g., ['title', 'company', 'url']"}
-                }},
-            ),
-            FunctionDeclaration(name="finish_task", description="Call when the goal is fully accomplished.", parameters={"type": "object", "properties": {"summary": {"type": "string"}}}),
+            FunctionDeclaration(name="get_page_content", description="Gets a summary of the page's interactive elements."),
+            FunctionDeclaration(name="navigate", description="Navigates to a URL.", parameters={"type": "object", "properties": {"url": {"type": "string"}}, "required": ["url"]}),
+            FunctionDeclaration(name="type_text", description="Types text into an element.", parameters={"type": "object", "properties": {"selector": {"type": "string"}, "text": {"type": "string"}}, "required": ["selector", "text"]}),
+            FunctionDeclaration(name="click", description="Clicks an element.", parameters={"type": "object", "properties": {"selector": {"type": "string"}}, "required": ["selector"]}),
+            FunctionDeclaration(name="press_key", description="Presses a key on an element.", parameters={"type": "object", "properties": {"selector": {"type": "string"},"key": {"type": "string"}}, "required": ["selector", "key"]}),
+            FunctionDeclaration(name="wait", description="Pauses execution for a specified number of seconds.", parameters={"type": "object", "properties": {"duration_seconds": {"type": "integer"}}, "required": ["duration_seconds"]}),
+            FunctionDeclaration(name="finish_task", description="Call when the goal is fully accomplished.", parameters={"type": "object", "properties": {"summary": {"type": "string"}}, "required": ["summary"]}),
         ]
         
         self.system_instruction = (
-            "You are an expert AI web automation agent. Your goal is to fulfill the user's request by creating a plan. "
-            "Think step-by-step. For long-running actions like starting a machine, use the `wait_for_element` tool with a longer `timeout`, for example, 60000 milliseconds for a 60-second wait. "
-            "If a tool call results in an error, analyze the error and change your strategy. If you are stuck, use the `finish_task` tool to report the failure."
+            "You are an expert AI web automation agent. You operate in a 'Look, Think, Act' cycle. "
+            "1. **Look**: Use `get_page_content` to understand the page. "
+            "2. **Think**: Decide the next action. "
+            "3. **Act**: Execute the action (`type_text`, `click`, etc.). "
+            "**IMPORTANT**: For long-running tasks like starting a machine, you MUST use the `wait` tool to pause for 30-60 seconds *before* using `get_page_content` again to check for the result. "
+            "If an action fails, use `get_page_content` again to re-evaluate. If stuck, use `finish_task` to report the failure."
         )
-        # --- END FIX ---
 
         self.model = genai.GenerativeModel(model_name, tools=tool_declarations, system_instruction=self.system_instruction)
         logger.info(f"GoogleGenAIAdapter initialized for model: {model_name}")
@@ -84,17 +54,8 @@ class GoogleGenAIAdapter(LLMAdapter):
         full_conversation.extend(convert_history_to_gemini(history))
 
         try:
-            safety_settings = {
-                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-            }
-            response = await self.model.generate_content_async(
-                full_conversation,
-                safety_settings=safety_settings
-            )
-
+            safety_settings = {cat: HarmBlockThreshold.BLOCK_NONE for cat in HarmCategory if cat != HarmCategory.HARM_CATEGORY_UNSPECIFIED}
+            response = await self.model.generate_content_async(full_conversation, safety_settings=safety_settings)
             response_part = response.candidates[0].content.parts[0]
             logger.debug(f"Google GenAI response part: {response_part}")
 
@@ -102,8 +63,6 @@ class GoogleGenAIAdapter(LLMAdapter):
             if hasattr(response_part, 'function_call') and response_part.function_call:
                 fc = response_part.function_call
                 args = {key: value for key, value in fc.args.items()}
-                if 'fields' in args and hasattr(args['fields'], '__iter__'):
-                    args['fields'] = list(args['fields'])
                 steps.append({"action": fc.name, **args})
 
             if not steps: logger.warning("LLM did not return any function calls.")

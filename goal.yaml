@@ -2,7 +2,6 @@ run_id: "paperspace-notebook-start-01"
 description: "Start a Paperspace notebook and navigate to the terminal."
 goal_type: natural_language
 prompt: |
-  1. Go to https://console.paperspace.com/twkqachca0/notebook/rvkyqnrn0uiltpy
-  2. Click the start machine button.
-  3. Wait for the stop machine button to appear.
-  4. On the left navigation bar, click on Terminals.
+  1. Go to www.linkedin.com
+  2. Wait for the page to load.
+  3. Show me names authors of the last 10 posts.

@@ -1,10 +1,9 @@
 import json
-from typing import List, Dict, Any, TypedDict, Optional
-
+from typing import List, Dict, Any, TypedDict
 from loguru import logger
 from langgraph.graph import StateGraph, END
 
-from aegis.core.models import Goal, Step
+from aegis.core.models import Goal
 from aegis.adapters.outbound.llm_adapter_factory import get_llm_adapter
 from aegis.adapters.outbound.browser_adapter_factory import get_browser_adapter
 
@@ -40,14 +39,10 @@ async def executor_step(state: AegisState):
     try:
         if action_name == 'navigate': await browser.navigate(args['url'])
         elif action_name == 'type_text': await browser.type_text(args['selector'], args['text'])
-        elif action_name == 'press_key': await browser.press_key(args.get('selector'), args.get('key'), wait_for_navigation=args.get('wait_for_navigation', False))
-        elif action_name == 'click': await browser.click(args.get('selector'), wait_for_navigation=args.get('wait_for_navigation', False))
-        elif action_name == 'wait_for_element': await browser.wait_for_element(args.get('selector'), timeout=args.get('timeout')) # Pass timeout
-        elif action_name == 'search_jobs': await browser.search_jobs(args['query'])
-        elif action_name == 'extract_data':
-            data = await browser.extract_data(args['selector'], args['fields'], args['limit'])
-            observation = f"Extracted data: {json.dumps(data)}"
-            logger.success(observation)
+        elif action_name == 'press_key': await browser.press_key(args['selector'], args['key'])
+        elif action_name == 'click': await browser.click(args['selector'])
+        elif action_name == 'get_page_content': observation = await browser.get_page_content()
+        elif action_name == 'wait': await browser.wait(args['duration_seconds'])
         
         if not observation: observation = f"Action '{action_name}' completed successfully."
     except Exception as e:
@@ -84,7 +79,7 @@ class Orchestrator:
         final_state = initial_state
         try:
             await self.browser_adapter.connect()
-            async for event in self.workflow.astream(initial_state):
+            async for event in self.workflow.astream(initial_state, {"recursion_limit": 100}):
                 logger.debug(f"Workflow event: {event}")
                 if "agent" in event: final_state = event["agent"]
                 if "executor" in event: final_state = event["executor"]
