@@ -1,0 +1,13 @@
+langgraph
+pydantic
+click
+fastapi
+websockets
+uvicorn[standard]
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-exporter-otlp
+opa-python-client
+python-dotenv
+pytest
+mutmut
