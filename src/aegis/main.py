@@ -1,73 +1,79 @@
-import click
-import yaml
 import asyncio
-import sys
+import json
+from typing import Dict, Any
+
+import click
 from loguru import logger
-from aegis.core.orchestrator import Orchestrator
+import yaml
+
 from aegis.core.models import Goal
+from aegis.core.orchestrator import Orchestrator
 
-# --- Config Loading & Logger Setup ---
+def load_config(config_path: str) -> Dict[str, Any]:
+    """Loads configuration from a YAML file."""
+    with open(config_path, 'r') as f:
+        return yaml.safe_load(f)
 
-def load_config():
-    """Loads config.yaml"""
-    try:
-        with open("config.yaml", 'r') as f:
-            return yaml.safe_load(f)
-    except FileNotFoundError:
-        logger.warning("config.yaml not found, using default settings.")
-        return {}
-    except yaml.YAMLError as e:
-        logger.error(f"Error parsing config.yaml: {e}")
-        return {}
-
-config = load_config()
-
-# Configure Loguru for rich, structured logging
-log_level = config.get("logging", {}).get("level", "INFO")
-logger.remove() # Remove default handler
-logger.add(
-    sys.stderr,
-    format="<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
-    colorize=True,
-    level=log_level,
-    enqueue=True, # Make logging async-safe
-    backtrace=True, # Show full stack trace on exceptions
-    diagnose=True # Add exception values
-)
-
-
+def setup_logging(level: str):
+    """Configures the logger."""
+    logger.remove()
+    logger.add(
+        "aegis.log",
+        level=level.upper(),
+        format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} - {message}",
+        rotation="10 MB",
+        retention="10 days",
+        enqueue=True,
+        backtrace=True,
+        diagnose=True
+    )
+    logger.add(
+        lambda msg: click.echo(msg, err=True),
+        level=level.upper(),
+        format="<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+    )
 
 @click.group()
 def cli():
-    """Aegis Framework CLI"""
+    """Aegis AI Automation Framework CLI"""
     pass
 
 @cli.command()
 @click.argument('goal_file', type=click.Path(exists=True))
-def run(goal_file: str):
-    """Runs an automation goal from a specified YAML file."""
+@click.option('--config', 'config_file', type=click.Path(exists=True), default='config.yaml', help='Path to config file.')
+def run(goal_file, config_file):
+    """Runs the Aegis framework with a given goal."""
+    config = load_config(config_file)
+    setup_logging(config.get("logging", {}).get("level", "INFO"))
+
     logger.info(f"Aegis framework starting to run goal from: {goal_file}")
 
-    try:
-        with open(goal_file, 'r') as f:
-            goal_data = yaml.safe_load(f)
-    except yaml.YAMLError as e:
-        logger.error(f"Error parsing YAML file: {e}")
-        return
-
-    try:
-        goal = Goal(**goal_data)
-    except Exception as e:
-        logger.error(f"Error validating goal file content: {e}")
-        return
+    with open(goal_file, 'r') as f:
+        goal_data = yaml.safe_load(f)
+    goal = Goal(**goal_data)
 
     orchestrator = Orchestrator(config=config)
     final_state = asyncio.run(orchestrator.run(goal=goal))
 
     logger.info("Orchestrator finished.")
     logger.info("--- Final State ---")
-    for key, value in final_state.items():
-        logger.info(f"- {key}: {value}")
+
+    if final_state:
+        # Log the final result at the SUCCESS level for clarity
+        summary = "Workflow completed, but the agent did not explicitly finish."
+        history = final_state.get('history', [])
+        if history:
+            last_tool_call = history[-1].get('tool_calls', [{}])[0].get('function', {})
+            if last_tool_call and last_tool_call.get('name') == 'finish_task':
+                args = json.loads(last_tool_call.get('arguments', '{}'))
+                summary = args.get('summary', 'No summary provided by agent.')
+        logger.success(f"Final Outcome: {summary}")
+        
+        # Log the full state at DEBUG level for troubleshooting
+        for key, value in final_state.items():
+            logger.debug(f"- {key}: {value}")
+    else:
+        logger.error("Workflow did not return a final state.")
 
 if __name__ == '__main__':
     cli()
