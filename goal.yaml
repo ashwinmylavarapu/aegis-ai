@@ -2,6 +2,4 @@ run_id: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
 description: "Find Python jobs on our internal jobs board."
 goal_type: natural_language
 prompt: |
-  Log into my account on jobs.our-company.com.
-  Navigate to the search page and look for "Senior Python Developer".
-  Save the title, team, and URL of the first 3 results to a file.
+  goto linkedin.
