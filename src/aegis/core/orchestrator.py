@@ -6,6 +6,7 @@ import hashlib
 import datetime
 from typing import List, Dict, Any, TypedDict, Literal, Optional
 
+from loguru import logger
 from langgraph.graph import StateGraph, END
 
 from aegis.core.models import Goal, Plan, Step, LockedPlan
@@ -18,6 +19,7 @@ class AegisState(TypedDict):
     """Represents the state of the Aegis automation graph."""
     run_id: str
     goal: Goal
+    config: Dict[str, Any] # Adding config to state
     plan: Optional[Plan]
     locked_plan: Optional[LockedPlan]
     policy_decision: Optional[Literal["allow", "deny"]]
@@ -28,10 +30,11 @@ class AegisState(TypedDict):
 # --- Node Definitions ---
 
 def planner_step(state: AegisState):
-    print(">>> In planner_step")
+    logger.info("Entering planner_step")
     goal = state['goal']
+    config = state['config']
     
-    llm_adapter = get_llm_adapter()
+    llm_adapter = get_llm_adapter(config)
     # In a real scenario, we would construct a more detailed meta-prompt
     plan_steps_dict = llm_adapter.generate_plan(goal.prompt)
     
@@ -41,41 +44,41 @@ def planner_step(state: AegisState):
         steps=[Step(**s) for s in plan_steps_dict]
     )
     
-    print(f"    Generated Plan (run_id: {plan.run_id})")
+    logger.info(f"Generated Plan (run_id: {plan.run_id})")
     return {"plan": plan}
 
 def policy_check_step(state: AegisState):
-    print(">>> In policy_check_step")
+    logger.info("Entering policy_check_step")
     plan = state['plan']
     
     # Mock OPA check: In a real system, this would call an OPA server.
     # For now, we'll just check if any step involves a disallowed action.
     # Let's pretend 'extract_data' is allowed but others might not be.
-    print("    Submitting plan to OPA for validation...")
+    logger.info("Submitting plan to OPA for validation...")
     decision = "allow" # Optimistic default
     
     # Example policy: check for allowed domains (simplified)
     for step in plan.steps:
         if step.action == "navigate" and "our-company.com" not in step.url:
-            print(f"    OPA Policy Violation: Navigation to non-allowed domain '{step.url}'")
+            logger.warning(f"OPA Policy Violation: Navigation to non-allowed domain '{step.url}'")
             decision = "deny"
             break
             
-    print(f"    OPA Decision: {decision}")
+    logger.info(f"OPA Decision: {decision}")
     return {"policy_decision": decision}
 
 def human_approval_step(state: AegisState):
-    print(">>> In human_approval_step")
+    logger.info("Entering human_approval_step")
     
     # Mock Human Approval: In a CLI, this would be a real prompt.
     # For now, we auto-approve.
-    print("    (Auto-approving plan)")
+    logger.info("(Auto-approving plan)")
     decision = "approve"
     
     return {"human_decision": decision}
 
 def plan_locker_step(state: AegisState):
-    print(">>> In plan_locker_step")
+    logger.info("Entering plan_locker_step")
     plan = state['plan']
     
     # Create a hash of the plan for integrity
@@ -89,24 +92,27 @@ def plan_locker_step(state: AegisState):
         approved_at_utc=datetime.datetime.now(datetime.timezone.utc).isoformat()
     )
     
-    print(f"    Plan locked with hash: {locked_plan.plan_hash}")
+    logger.info(f"Plan locked with hash: {locked_plan.plan_hash}")
     # In a real system, we would save this to plan.lock.json
     return {"locked_plan": locked_plan}
 
 async def executor_step(state: AegisState):
-    print(">>> In executor_step")
+    logger.info("Entering executor_step")
     log = state.get('execution_log', [])
     plan = state['locked_plan']
+    config = state['config']
     
-    browser = get_browser_adapter()
+    browser = get_browser_adapter(config)
 
     for i, step in enumerate(plan.steps):
         log.append(f"Executing step {i+1}: {step.model_dump_json()}")
+        logger.info(f"Executing step {i+1}/{len(plan.steps)}: {step.action}")
         
         try:
             if step.skill:
                 # Skill expansion would happen here. For now, just log it.
                 log.append(f"    Expanding and executing skill '{step.skill}'...")
+                logger.info(f"    Expanding and executing skill '{step.skill}'...")
             elif step.action == 'navigate':
                 await browser.navigate(step.url)
             elif step.action == 'type_text':
@@ -118,11 +124,14 @@ async def executor_step(state: AegisState):
             elif step.action == 'extract_data':
                 data = await browser.extract_data(step.selector, step.fields, step.limit)
                 log.append(f"    Extracted data: {data}")
+                logger.success(f"    Extracted data: {data}")
             else:
                 raise ValueError(f"Unknown action: {step.action}")
             log.append(f"    Step {i+1} completed successfully.")
+            logger.success(f"Step {i+1} completed successfully.")
         except Exception as e:
             log.append(f"    ERROR executing step {i+1}: {e}")
+            logger.error(f"ERROR executing step {i+1}: {e}")
             # Stop execution on failure
             return {"execution_log": log, "result": "Workflow failed."}
             
@@ -143,7 +152,8 @@ def should_continue_after_human(state: AegisState):
 # --- Orchestrator ---
 
 class Orchestrator:
-    def __init__(self):
+    def __init__(self, config: Dict[str, Any]):
+        self.config = config
         self.workflow = self._build_graph()
 
     def _build_graph(self):
@@ -178,6 +188,7 @@ class Orchestrator:
         initial_state = {
             "run_id": goal.run_id,
             "goal": goal,
+            "config": self.config,
             "plan": None,
             "locked_plan": None,
             "policy_decision": None,

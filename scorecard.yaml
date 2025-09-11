@@ -1,0 +1,22 @@
+# scorecard.yaml - This file is machine-readable and enforced by CI.
+# The pipeline will fail if any URL returns a non-200 status or times out.
+service: aegis
+tier: 2 # Please review and set the correct service tier (1, 2, or 3)
+owner: '#team-placeholder' # Please update with the owning team
+
+evidence:
+  # Reliability
+  slo_dashboard: "https://dashboards.example.com/d/slo-aegis"
+  four_keys_dashboard: "https://dashboards.example.com/d/dora-aegis"
+  runbooks: "https://runbooks.example.com/aegis"
+  
+  # Supply Chain & Security
+  sbom_latest_uri: "https://artifacts.example.com/aegis/latest/sbom.json"
+  provenance_latest_uri: "https://artifacts.example.com/aegis/latest/provenance.intoto.json"
+  
+  # Compliance & Quality
+  accessibility_report: "https://reports.example.com/a11y/aegis/latest"
+  dpia_record_id: "DPIA-YYYY-NNN" # Please update with the relevant DPIA record ID, if applicable
+  
+  # Operations
+  rollback_plan_tested: "https://wiki.example.com/ops/aegis-rollback"

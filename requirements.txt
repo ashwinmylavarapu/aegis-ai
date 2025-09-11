@@ -14,3 +14,4 @@ mutmut
 google-generativeai
 openai
 fastmcp
+loguru
