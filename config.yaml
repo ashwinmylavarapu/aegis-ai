@@ -1,5 +1,5 @@
 logging:
-  level: "SUCCESS"
+  level: "INFO"
 
 llm:
   provider: "google_genai_studio"
@@ -13,9 +13,11 @@ llm:
     api_key: "kQMgOqm4E1QF80V3UZY_Yqiu-w3pEi_k7P_KV19m8oY" # Replace with your actual key
     base_url: "https://api.poe.com/v1" # Optional, for proxy
 
+# Configure the browser adapter to use browsermcp
 browser:
-  adapter: "playwright" # Can be "playwright" or "noop"
-  playwright:
-    cdp_endpoint: "http://localhost:9222" # Default Chrome debugging port
+  adapter: "browsermcp"
 
+# NEW: Configure the correct WebSocket URL for your local server
+browser_mcp:
+  url: "http://localhost:9003/"
 # The browser_mcp section is no longer needed and can be removed.

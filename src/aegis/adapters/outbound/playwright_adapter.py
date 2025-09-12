@@ -92,30 +92,34 @@ class PlaywrightAdapter(BrowserAdapter):
             await self._page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
         elif direction == "up":
             await self._page.evaluate("window.scrollTo(0, 0)")
-        # Add a small delay to allow content to load after scrolling
         await asyncio.sleep(2)
         
+    # --- FIX: Restore the missing methods ---
     async def wait_for_element(self, selector: str, timeout: int = 15000):
         await self.connect()
         logger.info(f"[BROWSER] Waiting for element '{selector}'")
         await self._page.wait_for_selector(selector, timeout=timeout)
 
-    async def extract_data(self, selector: str, fields: List[str], limit: int) -> List[Dict[str, Any]]:
+    async def extract_data(self, selector: str, fields: Dict[str, str], limit: int) -> List[Dict[str, Any]]:
         await self.connect()
         logger.info(f"Extracting data from '{selector}' (limit: {limit})")
         
-        field_to_selector_map = {"title": "h3.base-search-card__title", "company": "h4.base-search-card__subtitle", "location": ".job-search-card__location", "url": "a.base-card__full-link"}
         results = []
         elements = await self._page.query_selector_all(selector)
+        
         for i, element in enumerate(elements):
             if i >= limit: break
             item_data = {}
-            for field in fields:
+            for field_name, sub_selector in fields.items():
                 try:
-                    css_selector = field_to_selector_map.get(field)
-                    if not css_selector: item_data[field] = None; continue
-                    sub_element = await element.query_selector(css_selector)
-                    item_data[field] = await sub_element.get_attribute('href') if field == "url" and sub_element else await sub_element.inner_text() if sub_element else None
-                except Exception: item_data[field] = None
+                    sub_element = await element.query_selector(sub_selector)
+                    if sub_element:
+                        item_data[field_name] = await sub_element.inner_text()
+                    else:
+                        item_data[field_name] = None
+                except Exception as e:
+                    logger.warning(f"Could not extract field '{field_name}' using selector '{sub_selector}': {e}")
+                    item_data[field_name] = None
             results.append(item_data)
         return results
+    # --- END FIX ---

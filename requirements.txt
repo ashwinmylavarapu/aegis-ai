@@ -13,5 +13,5 @@ mutmut
 google-generativeai
 openai
 loguru
-playwright
-beautifulsoup4
+fastmcp>=2.12.0
+websockets

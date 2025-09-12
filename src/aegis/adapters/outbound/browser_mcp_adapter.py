@@ -1,78 +1,78 @@
 import asyncio
-from typing import Dict, Any
+from typing import Dict, Any, List
 from loguru import logger
-from fastmcp import Client
+from fastmcp.client import Client
 
-class BrowserMCPAdapter:
+from .browser_adapter import BrowserAdapter
+
+class BrowserMCPAdapter(BrowserAdapter):
+    """An adapter to connect to a running BrowserMCP WebSocket server."""
     def __init__(self, config: Dict[str, Any]):
-        self.client = None
-        self.is_connected = False  # Track connection state explicitly
         self.config = config.get("browser_mcp", {})
+        mcp_url = self.config.get("url")
+        if not mcp_url:
+            raise ValueError("BrowserMCP config missing 'url' in config.yaml")
+
+        client_config = {"mcpServers": {"browsermcp_server": {"url": mcp_url}}}
+        self.client = Client(client_config)
+        self.is_connected = False
+        logger.info(f"BrowserMCPAdapter initialized for URL: {mcp_url}")
 
     async def connect(self):
-        # We only connect if we haven't already.
-        # The server is now assumed to be running, managed by the Chrome Extension.
-        if not self.is_connected:
-            mcp_url = self.config.get("url", "http://localhost:6279/mcp/")
-            logger.info(f"Attempting to connect to pre-existing BrowserMCP server at: {mcp_url}")
-
-            client_config = {
-                "mcpServers": {
-                    "browsermcp_server": {"url": mcp_url}
-                }
-            }
-            self.client = Client(client_config)
-            try:
-                await self.client.__aenter__()
-                self.is_connected = True  # Set state to connected only on success
-                logger.success("Connected to BrowserMCP server.")
-            except Exception as e:
-                logger.error(f"Failed to connect to BrowserMCP server: {e}")
-                # Re-raise the exception to signal failure to the orchestrator
-                raise
-
-    async def navigate(self, url: str):
-        await self.connect()
-        logger.info(f"[BROWSER] Navigating to: {url}")
-        await self.client.call_tool("browsermcp_server_navigate", {"url": url})
-
-    async def type_text(self, selector: str, text: str):
-        await self.connect()
-        logger.info(f"[BROWSER] Typing '{text}' into '{selector}'")
-        await self.client.call_tool("browsermcp_server_type", {"element": selector, "text": text, "submit": False})
-
-    async def click(self, selector: str):
-        await self.connect()
-        logger.info(f"[BROWSER] Clicking on '{selector}'")
-        await self.client.call_tool("browsermcp_server_click", {"element": selector, "ref": ""})
-
-    async def wait_for_element(self, selector: str):
-        await self.connect()
-        logger.info(f"[BROWSER] Waiting for element '{selector}'")
-        await self.client.call_tool("browsermcp_server_wait", {"time": 2})
-
-    async def extract_data(self, selector: str, fields: list, limit: int):
-        await self.connect()
-        logger.info(f"[BROWSER] Extracting data from '{selector}' (limit: {limit})")
-        # This remains a mock until we can successfully connect and interact
-        return [
-            {"title": "Senior Python Developer", "team": "Platform", "url": "https://jobs.our-company.com/jobs/1"},
-            {"title": "Python Developer", "team": "Data Science", "url": "https://jobs.our-company.com/jobs/2"},
-            {"title": "Senior Python Engineer (Backend)", "team": "API", "url": "https://jobs.our-company.com/jobs/3"},
-        ]
+        if self.is_connected:
+            return
+        logger.info(f"Connecting to BrowserMCP server at {self.config.get('url')}")
+        await self.client.__aenter__()
+        self.is_connected = True
+        logger.success("Connected to BrowserMCP server.")
 
     async def close(self):
-        if self.client and self.is_connected:
-            logger.info("Closing BrowserMCP client connection...")
+        if self.is_connected:
+            logger.info("Closing connection to BrowserMCP server.")
             await self.client.__aexit__(None, None, None)
             self.is_connected = False
-            logger.info("BrowserMCP client connection closed.")
+    
+    async def call_mcp_tool(self, tool_name: str, **kwargs):
+        """Helper to call a tool on the MCP server."""
+        await self.connect()
+        # The AI agent generates the simple tool name, we add the required prefix.
+        full_tool_name = f"browsermcp_server_{tool_name}"
+        logger.info(f"[BROWSER] Calling tool '{full_tool_name}' with args: {kwargs}")
+        return await self.client.call_tool(full_tool_name, kwargs)
 
-_browser_adapter_instance = None
+    async def navigate(self, url: str):
+        return await self.call_mcp_tool("navigate", url=url)
 
-def get_browser_adapter(config: Dict[str, Any]):
-    global _browser_adapter_instance
-    if _browser_adapter_instance is None:
-        logger.debug("Creating new BrowserMCPAdapter instance")
-        _browser_adapter_instance = BrowserMCPAdapter(config)
-    return _browser_adapter_instance
+    async def click(self, selector: str):
+        return await self.call_mcp_tool("click", element=selector)
+
+    async def type_text(self, selector: str, text: str):
+        return await self.call_mcp_tool("type", element=selector, text=text)
+
+    async def press_key(self, selector: str, key: str):
+        # The selector is often optional for a general key press
+        return await self.call_mcp_tool("press_key", key=key)
+
+    async def get_page_content(self) -> str:
+        return await self.call_mcp_tool("snapshot")
+
+    async def scroll(self, direction: str):
+        key = "PageDown" if direction == "down" else "PageUp"
+        return await self.call_mcp_tool("press_key", key=key)
+        
+    async def wait(self, duration_seconds: int):
+        logger.info(f"Client-side wait for {duration_seconds} seconds...")
+        await asyncio.sleep(duration_seconds)
+
+    async def wait_for_element(self, selector: str, timeout: int = 15000):
+        # BrowserMCP does not have a native wait_for_element tool.
+        # This is a client-side placeholder. The agent should use 'wait' for delays.
+        logger.warning("BrowserMCPAdapter does not have a native 'wait_for_element' tool. Performing a short client-side wait.")
+        await asyncio.sleep(2) # Short pause
+        return
+
+    async def extract_data(self, selector: str, fields: Dict[str, str], limit: int) -> List[Dict[str, Any]]:
+        # This is a complex action that the "Look, Think, Act" agent handles by
+        # first using get_page_content and then reasoning about the result.
+        logger.warning("BrowserMCPAdapter relies on the agent to perform extraction after 'get_page_content'. This tool does not perform an action.")
+        return []

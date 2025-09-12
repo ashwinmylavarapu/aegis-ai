@@ -3,7 +3,7 @@ from typing import List, Dict, Any, TypedDict
 from loguru import logger
 from langgraph.graph import StateGraph, END
 
-from aegis.core.models import Goal
+from aegis.core.models import Goal, Step
 from aegis.adapters.outbound.llm_adapter_factory import get_llm_adapter
 from aegis.adapters.outbound.browser_adapter_factory import get_browser_adapter
 
@@ -37,15 +37,11 @@ async def executor_step(state: AegisState):
     browser, observation = get_browser_adapter(config), ""
     
     try:
-        if action_name == 'navigate': await browser.navigate(args['url'])
-        elif action_name == 'type_text': await browser.type_text(args['selector'], args['text'])
-        elif action_name == 'press_key': await browser.press_key(args['selector'], args['key'])
-        elif action_name == 'click': await browser.click(args['selector'])
-        elif action_name == 'get_page_content': observation = await browser.get_page_content()
-        elif action_name == 'wait': await browser.wait(args['duration_seconds'])
-        elif action_name == 'scroll': await browser.scroll(args['direction'])
-        
-        if not observation: observation = f"Action '{action_name}' completed successfully."
+        if action_name == 'finish_task':
+            observation = f"Task finished with summary: {args.get('summary')}"
+        else:
+            result = await getattr(browser, action_name)(**args)
+            observation = f"Tool '{action_name}' executed successfully. Result: {result}"
     except Exception as e:
         logger.error(f"Error executing action '{action_name}': {e}", exc_info=True)
         observation = f"Error executing action '{action_name}': {e}"
@@ -79,7 +75,6 @@ class Orchestrator:
         initial_state = {"run_id": goal.run_id, "goal": goal, "config": self.config, "history": [], "result": None}
         final_state = initial_state
         try:
-            await self.browser_adapter.connect()
             async for event in self.workflow.astream(initial_state, {"recursion_limit": 100}):
                 logger.debug(f"Workflow event: {event}")
                 if "agent" in event: final_state = event["agent"]

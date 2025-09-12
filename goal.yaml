@@ -1,7 +1,8 @@
-run_id: "paperspace-notebook-start-01"
-description: "Start a Paperspace notebook and navigate to the terminal."
+run_id: "linkedin-author-extraction-02"
+description: "Find the names of the authors of the last 10 posts on the LinkedIn feed."
 goal_type: natural_language
 prompt: |
-  1. Go to www.linkedin.com
-  2. Wait for the page to load.
-  3. Show me names authors of the last 10 posts.
+  1. Go to https://colab.research.google.com/drive/15jp9wJLMRNdEthgiScobckXsSJ2nwLtx?authuser=3
+  2. Click on Runtime
+  3. Click on Run all
+
