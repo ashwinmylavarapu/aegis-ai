@@ -1,79 +1,87 @@
 import asyncio
-import json
-from typing import Dict, Any
-
+import yaml
+import os
 import click
 from loguru import logger
-import yaml
+import json
 
-from aegis.core.models import Goal
 from aegis.core.orchestrator import Orchestrator
+from aegis.core.models import Goal
 
-def load_config(config_path: str) -> Dict[str, Any]:
-    """Loads configuration from a YAML file."""
-    with open(config_path, 'r') as f:
-        return yaml.safe_load(f)
-
-def setup_logging(level: str):
-    """Configures the logger."""
+def setup_logging(level="INFO"):
     logger.remove()
-    logger.add(
-        "aegis.log",
-        level=level.upper(),
-        format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} - {message}",
-        rotation="10 MB",
-        retention="10 days",
-        enqueue=True,
-        backtrace=True,
-        diagnose=True
-    )
-    logger.add(
-        lambda msg: click.echo(msg, err=True),
-        level=level.upper(),
-        format="<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
-    )
+    # Using click.echo to ensure logs are visible with the `tee` command
+    logger.add(lambda msg: click.echo(msg, err=True), level=level, format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} - {message}")
+
+def load_config(config_path: str) -> dict:
+    """Loads a YAML configuration file and expands environment variables."""
+    with open(config_path, 'r') as f:
+        # Expand environment variables like ${VAR_NAME}
+        config_str = os.path.expandvars(f.read())
+        return yaml.safe_load(config_str)
+
+def load_goal(goal_path: str) -> Goal:
+    """Loads a goal from a YAML file."""
+    with open(goal_path, 'r') as f:
+        goal_dict = yaml.safe_load(f)
+    return Goal(**goal_dict)
 
 @click.group()
 def cli():
-    """Aegis AI Automation Framework CLI"""
+    """Aegis AI Framework CLI"""
     pass
 
 @cli.command()
 @click.argument('goal_file', type=click.Path(exists=True))
-@click.option('--config', 'config_file', type=click.Path(exists=True), default='config.yaml', help='Path to config file.')
-def run(goal_file, config_file):
-    """Runs the Aegis framework with a given goal."""
-    config = load_config(config_file)
-    setup_logging(config.get("logging", {}).get("level", "INFO"))
-
+@click.option('--config', 'config_file', default='config.yaml', help='Path to the configuration file.')
+@click.option('--log-level', default='INFO', help='Set the logging level (e.g., DEBUG, INFO, WARNING).')
+def run(goal_file, config_file, log_level):
+    """Run a goal from a YAML file."""
+    setup_logging(level=log_level.upper())
     logger.info(f"Aegis framework starting to run goal from: {goal_file}")
 
-    with open(goal_file, 'r') as f:
-        goal_data = yaml.safe_load(f)
-    goal = Goal(**goal_data)
+    try:
+        config = load_config(config_file)
+        goal = load_goal(goal_file)
 
-    orchestrator = Orchestrator(config=config)
-    final_state = asyncio.run(orchestrator.run(goal=goal))
+        orchestrator = Orchestrator(config=config)
+        final_state = asyncio.run(orchestrator.run(goal=goal))
 
-    logger.info("Orchestrator finished.")
-    logger.info("--- Final State ---")
-
-    if final_state:
-        # Log the final result at the SUCCESS level for clarity
-        summary = "Workflow completed, but the agent did not explicitly finish."
-        history = final_state.get('history', [])
-        if history:
-            last_tool_call = history[-1].get('tool_calls', [{}])[0].get('function', {})
-            if last_tool_call and last_tool_call.get('name') == 'finish_task':
-                args = json.loads(last_tool_call.get('arguments', '{}'))
-                summary = args.get('summary', 'No summary provided by agent.')
-        logger.success(f"Final Outcome: {summary}")
+        logger.info("Orchestrator finished.")
+        logger.info("--- Final State ---")
         
-        # Log the full state at DEBUG level for troubleshooting
-        for key, value in final_state.items():
-            logger.debug(f"- {key}: {value}")
-    else:
-        logger.error("Workflow did not return a final state.")
+        if final_state:
+            last_ai_turn = next((turn for turn in reversed(final_state.get('history', [])) if turn.get('type') == 'ai'), None)
+            
+            if last_ai_turn:
+                tool_calls = last_ai_turn.get('content', [])
+                for call in tool_calls:
+                    if call.get('tool_name') == 'finish_task':
+                        summary = call.get('tool_args', {}).get('summary', 'No summary provided.')
+                        logger.success(f"Final Outcome: {summary}")
+                        # Pretty print the summary if it's a JSON string
+                        try:
+                            parsed_summary = json.loads(summary)
+                            pretty_summary = json.dumps(parsed_summary, indent=2)
+                            click.echo(pretty_summary)
+                        except json.JSONDecodeError:
+                            pass # It's just a regular string
+                        break
+                else:
+                    logger.warning("Workflow completed, but the agent did not explicitly call finish_task.")
+            else:
+                 logger.success("Workflow completed without a final AI turn.")
 
-if __name__ == '__main__':
+            debug_state = {k: v for k, v in final_state.items()}
+            for key, value in debug_state.items():
+                logger.debug(f"- {key}: {value}")
+        else:
+            logger.error("Workflow did not return a final state.")
+
+    except Exception as e:
+        logger.error(f"An unrecoverable error occurred during execution: {e}")
+        # Re-raise to ensure the script exits with a non-zero code and shows the full stack trace
+        raise
+
+if __name__ == "__main__":
     cli()
