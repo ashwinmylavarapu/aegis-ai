@@ -1,82 +1,136 @@
 import json
 from typing import Dict, Any, List
+
 from loguru import logger
 import google.generativeai as genai
 from google.generativeai.types import HarmCategory, HarmBlockThreshold, FunctionDeclaration, Tool
-from tenacity import retry, stop_after_attempt, wait_exponential, before_sleep_log
-from .base import LLMAdapter
+from tenacity import retry, stop_after_attempt, wait_exponential
 
-def log_retry_attempt(retry_state):
-    """Custom log function for tenacity to show retry attempts."""
-    logger.warning(f"Retrying API call (attempt {retry_state.attempt_number})...")
+from .base import LLMAdapter
 
 def convert_history_to_gemini(history: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     gemini_history = []
-    for message in history:
-        role = message["role"]
-        if role == "assistant":
-            parts = []
-            for tc in message.get("tool_calls", []):
-                func = tc.get("function", {})
-                parts.append({'function_call': {"name": func.get("name"), "args": json.loads(func.get("arguments", '{}'))}})
-            if parts: gemini_history.append({'role': 'model', 'parts': parts})
-        elif role == "tool":
-            gemini_history.append({'role': 'function', 'parts': [{'function_response': {'name': message.get('name'), 'response': {'content': message.get('content')}}}]})
+    for turn in history:
+        if turn["type"] == "human":
+            gemini_history.append({"role": "user", "parts": [{"text": turn["content"]}]})
+        elif turn["type"] == "ai":
+            tool_calls = turn["content"]
+            gemini_parts = []
+            for call in tool_calls:
+                gemini_parts.append({"function_call": {"name": call["tool_name"], "args": call["tool_args"]}})
+            gemini_history.append({"role": "model", "parts": gemini_parts})
+        elif turn["type"] == "tool":
+            tool_responses = turn["content"]
+            gemini_parts = []
+            for resp in tool_responses:
+                gemini_parts.append({"function_response": {"name": resp["tool_name"], "response": {"content": resp["tool_output"]}}})
+            gemini_history.append({"role": "tool", "parts": gemini_parts})
     return gemini_history
 
 class GoogleGenAIAdapter(LLMAdapter):
     def __init__(self, config: Dict[str, Any]):
-        llm_config = config.get("llm", {}).get("google_genai_studio", {})
-        api_key, model_name = llm_config.get("api_key"), llm_config.get("model", "gemini-pro")
-        if not api_key: raise ValueError("Google GenAI config missing 'api_key'")
+        llm_config = config.get("llm", {}).get("google_genai", {})
+        api_key = llm_config.get("api_key")
+        model_name = llm_config.get("model", "gemini-1.5-flash")
+
+        if not api_key:
+            raise ValueError("Google GenAI API key is missing from the config.")
+        
         genai.configure(api_key=api_key)
         
         tool_declarations = [
-            FunctionDeclaration(name="get_page_content", description="Gets a simplified summary of the page's interactive elements."),
-            FunctionDeclaration(name="navigate", description="Navigates to a URL.", parameters={"type": "object", "properties": {"url": {"type": "string"}}, "required": ["url"]}),
-            FunctionDeclaration(name="type_text", description="Types text into an element.", parameters={"type": "object", "properties": {"selector": {"type": "string"}, "text": {"type": "string"}}, "required": ["selector", "text"]}),
-            FunctionDeclaration(name="click", description="Clicks an element.", parameters={"type": "object", "properties": {"selector": {"type": "string"}}, "required": ["selector"]}),
-            FunctionDeclaration(name="press_key", description="Presses a key on an element.", parameters={"type": "object", "properties": {"selector": {"type": "string"},"key": {"type": "string"}}, "required": ["selector", "key"]}),
-            FunctionDeclaration(name="wait", description="Pauses for a number of seconds.", parameters={"type": "object", "properties": {"duration_seconds": {"type": "integer"}}, "required": ["duration_seconds"]}),
-            FunctionDeclaration(name="scroll", description="Scrolls the page.", parameters={"type": "object", "properties": {"direction": {"type": "string", "enum": ["up", "down"]}}, "required": ["direction"]}),
-            FunctionDeclaration(name="paste", description="Pastes content from the clipboard into a focused element.", parameters={"type": "object", "properties": {"selector": {"type": "string"}}, "required": ["selector"]}),
-            FunctionDeclaration(name="extract_data", description="Extracts data from a list of elements.", parameters={"type": "object", "properties": {"selector": {"type": "string"}, "limit": {"type": "integer"}, "fields": {"type": "object", "description": "A dictionary where keys are field names and values are CSS selectors."}}}),
-            FunctionDeclaration(name="finish_task", description="Call when the goal is accomplished.", parameters={"type": "object", "properties": {"summary": {"type": "string"}}, "required": ["summary"]}),
+            FunctionDeclaration(
+                name="find_element",
+                description="Finds the CSS selector for a single element on the page based on a natural language description. Use this for single interactions like clicking.",
+                parameters={"type": "object", "properties": {"query": {"type": "string", "description": "A simple description of the element, e.g., 'the search bar'."}}, "required": ["query"]},
+            ),
+            FunctionDeclaration(
+                name="type_text",
+                description="Types text into an element identified by its CSS selector.",
+                parameters={"type": "object", "properties": {"selector": {"type": "string"}, "text": {"type": "string"}}, "required": ["selector", "text"]},
+            ),
+            FunctionDeclaration(
+                name="click",
+                description="Clicks an element identified by its CSS selector.",
+                parameters={"type": "object", "properties": {"selector": {"type": "string"}}, "required": ["selector"]},
+            ),
+            FunctionDeclaration(
+                name="scroll",
+                description="Scrolls the page down to load more content.",
+                parameters={"type": "object", "properties": {"direction": {"type": "string", "enum": ["down"]}}, "required": ["direction"]},
+            ),
+            FunctionDeclaration(
+                name="navigate",
+                description="Navigates the browser to a specific URL.",
+                parameters={"type": "object", "properties": {"url": {"type": "string"}}, "required": ["url"]},
+            ),
+            FunctionDeclaration(
+                name="wait_for_element",
+                description="Waits for a specific element to appear on the page before proceeding. Useful for dynamic content.",
+                parameters={"type": "object", "properties": {"selector": {"type": "string"}, "timeout": {"type": "integer", "description": "How many seconds to wait."}}, "required": ["selector"]},
+            ),
+            FunctionDeclaration(
+                name="extract_data",
+                description="Extracts a list of structured data from the page, like post details or search results.",
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "selector": {"type": "string", "description": "The CSS selector for the repeating container element (e.g., a list item)."},
+                        "fields": {"type": "object", "description": "A dictionary where keys are field names and values are CSS selectors relative to the container."},
+                        "limit": {"type": "integer", "description": "The maximum number of items to extract."}
+                    },
+                    "required": ["selector", "fields"]
+                },
+            ),
+            FunctionDeclaration(
+                name="linkedin_login",
+                description="Logs the user into LinkedIn using credentials from environment variables.",
+            ),
+            FunctionDeclaration(
+                name="finish_task",
+                description="Call this function when the high-level goal is fully accomplished, either successfully or because the requested information could not be found.",
+                parameters={"type": "object", "properties": {"summary": {"type": "string"}}, "required": ["summary"]},
+            ),
         ]
         
         self.system_instruction = (
-            "You are an expert AI web automation agent. You operate in a 'Look, Think, Act' cycle. "
-            "1. **Look**: Always use `get_page_content` to understand the page. "
-            "2. **Think**: Based on the content and goal, decide the next action and construct a precise CSS selector. "
-            "3. **Act**: Execute the tool (`type_text`, `click`, `paste` etc.). "
-            "4. Repeat. If an action fails, use `get_page_content` again to re-evaluate. When the goal is complete, use `finish_task`."
+            "You are a web automation robot. Your only purpose is to execute a numbered list of instructions provided by the user. You must follow these rules absolutely:\n"
+            "1.  **Examine History**: Look at the numbered plan from the user and the list of tools you have already executed.\n"
+            "2.  **Determine Next Step**: Identify the single next numbered step from the user's plan that you have not yet executed.\n"
+            "3.  **Execute ONE Tool for that Step**: Call the single tool that completes that specific step. For example, if the next step is `3c. Scroll down 2 times`, your ONLY valid action is to call the `scroll` tool. If the next step is `4a. Find the button...`, your ONLY valid action is to call `find_element`.\n"
+            "4.  **DO NOT DEVIATE**: Do not repeat steps. Do not skip steps. Do not do anything other than the very next step in the plan.\n"
+            "5.  **FINISH**: After you execute the tool for the final numbered step, your next and only action MUST be to call `finish_task`."
         )
 
         self.model = genai.GenerativeModel(model_name, tools=tool_declarations, system_instruction=self.system_instruction)
         logger.info(f"GoogleGenAIAdapter initialized for model: {model_name}")
 
-    @retry(
-        wait=wait_exponential(multiplier=2, min=5, max=60), # Wait 5s, then 10s, then 20s
-        stop=stop_after_attempt(3),
-        before_sleep=log_retry_attempt,
-        reraise=True
-    )
-    async def generate_plan(self, goal: str, history: List[Dict[str, Any]] = []) -> List[Dict[str, Any]]:
-        full_conversation = [{"role": "user", "parts": [{"text": goal}]}]
-        full_conversation.extend(convert_history_to_gemini(history))
+    @retry(wait=wait_exponential(multiplier=2, min=5, max=60), stop=stop_after_attempt(3))
+    async def generate_plan(self, history: List[Dict[str, Any]] = []) -> List[Dict[str, Any]]:
+        logger.info(f"Generating plan based on conversation history.")
+        gemini_history = convert_history_to_gemini(history)
+        
         try:
-            safety_settings = {cat: HarmBlockThreshold.BLOCK_NONE for cat in HarmCategory if cat != HarmCategory.HARM_CATEGORY_UNSPECIFIED}
-            response = await self.model.generate_content_async(full_conversation, safety_settings=safety_settings)
-            response_part = response.candidates[0].content.parts[0]
+            response = await self.model.generate_content_async(
+                contents=gemini_history,
+                generation_config={"temperature": 0.0},
+                safety_settings={
+                    HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                    HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                    HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+                    HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+                }
+            )
             
-            steps = []
-            if hasattr(response_part, 'function_call') and response_part.function_call:
-                fc = response_part.function_call
-                args = {key: value for key, value in fc.args.items()}
-                if 'fields' in args and hasattr(args['fields'], '__iter__'):
-                    args['fields'] = {key: value for key, value in args['fields'].items()}
-                steps.append({"action": fc.name, **args})
-            return steps
+            tool_calls = [{"tool_name": part.function_call.name, "tool_args": {k: v for k, v in part.function_call.args.items()}} for part in response.candidates[0].content.parts if part.function_call]
+            
+            if not tool_calls:
+                logger.warning("LLM did not return any tool calls. Returning empty plan.")
+                return []
+                
+            logger.success(f"Generated plan with {len(tool_calls)} tool call(s).")
+            return tool_calls
+
         except Exception as e:
-            logger.error(f"Error calling Google GenAI API: {e}")
+            logger.error(f"Error generating plan from Google GenAI: {e}")
             raise

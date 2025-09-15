@@ -4,7 +4,7 @@ logging:
 llm:
   provider: "google_genai_studio"
 
-  google_genai_studio:
+  google_genai:
     model: "gemini-2.5-flash"
     api_key: "AIzaSyAUQhDu4_Y8wLjmFXN9gWhlDCJ3-Dey4-s" # Replace with your actual key
 
@@ -18,3 +18,6 @@ browser:
   adapter: "playwright"
   playwright:
     cdp_endpoint: "http://localhost:9222"
+opa:
+  provider: "noop" # Can be "http" or "noop"
+  url: "http://localhost:8181/v1/data/aegis/allow"

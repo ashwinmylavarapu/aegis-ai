@@ -16,3 +16,4 @@ loguru
 playwright
 beautifulsoup4
 tenacity
+thefuzz
