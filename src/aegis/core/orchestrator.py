@@ -3,7 +3,7 @@ from typing import List, Dict, Any, TypedDict
 from loguru import logger
 from langgraph.graph import StateGraph, END
 
-from aegis.core.models import Goal, Step
+from aegis.core.models import Goal
 from aegis.adapters.outbound.llm_adapter_factory import get_llm_adapter
 from aegis.adapters.outbound.browser_adapter_factory import get_browser_adapter
 
@@ -18,12 +18,17 @@ async def agent_step(state: AegisState):
     logger.info("--- AGENT STEP (THINK) ---")
     goal, config, history = state['goal'], state['config'], state.get('history', [])
     llm_adapter = get_llm_adapter(config)
-    next_steps = await llm_adapter.generate_plan(goal.prompt, history)
+    
+    truncated_history = history[-10:]
+    next_steps = await llm_adapter.generate_plan(goal.prompt, truncated_history)
+    
     if not next_steps:
         logger.warning("Agent proposed no action. Finishing.")
         next_steps = [{"action": "finish_task", "summary": "Agent finished: No further action proposed."}]
+    
     next_action = next_steps[0]
-    history.append({"role": "assistant", "content": None, "tool_calls": [{"id": f"call_{len(history)}", "function": {"name": next_action['action'], "arguments": json.dumps({k: v for k, v in next_action.items() if k != 'action'})}, "type": "function"}]})
+    action_name = next_action.pop('action')
+    history.append({"role": "assistant", "content": None, "tool_calls": [{"id": f"call_{len(history)}", "function": {"name": action_name, "arguments": json.dumps(next_action)}, "type": "function"}]})
     return {"history": history}
 
 async def executor_step(state: AegisState):
@@ -40,9 +45,8 @@ async def executor_step(state: AegisState):
         if action_name == 'finish_task':
             observation = f"Task finished with summary: {args.get('summary')}"
         else:
-            # Dynamically call the correct method on the adapter
             result = await getattr(browser, action_name)(**args)
-            observation = f"Tool '{action_name}' executed successfully. Result: {result}"
+            observation = f"Tool '{action_name}' executed successfully. Result: {result or 'None'}"
     except Exception as e:
         logger.error(f"Error executing action '{action_name}': {e}", exc_info=True)
         observation = f"Error executing action '{action_name}': {e}"
@@ -77,7 +81,7 @@ class Orchestrator:
         final_state = initial_state
         try:
             await self.browser_adapter.connect()
-            async for event in self.workflow.astream(initial_state, {"recursion_limit": 100}):
+            async for event in self.workflow.astream(initial_state, {"recursion_limit": 150}):
                 logger.debug(f"Workflow event: {event}")
                 if "agent" in event: final_state = event["agent"]
                 if "executor" in event: final_state = event["executor"]

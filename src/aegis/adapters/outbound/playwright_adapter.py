@@ -1,17 +1,16 @@
 import asyncio
+import platform
 from typing import Dict, Any, List, Optional
 from loguru import logger
 from playwright.async_api import async_playwright, Browser, Page, Playwright
 from bs4 import BeautifulSoup
-
 from .browser_adapter import BrowserAdapter
 
 class PlaywrightAdapter(BrowserAdapter):
     def __init__(self, config: Dict[str, Any]):
         self.config = config.get("browser", {}).get("playwright", {})
         self.cdp_endpoint = self.config.get("cdp_endpoint")
-        if not self.cdp_endpoint:
-            raise ValueError("Playwright config missing 'cdp_endpoint' in config.yaml")
+        if not self.cdp_endpoint: raise ValueError("Playwright config missing 'cdp_endpoint'")
         self._playwright: Playwright = None
         self._browser: Browser = None
         self._page: Page = None
@@ -27,9 +26,8 @@ class PlaywrightAdapter(BrowserAdapter):
             self.is_connected = True
             logger.success("Successfully connected to browser.")
         except Exception as e:
-            logger.error(f"Failed to connect to browser over CDP: {e}")
             await self.close()
-            raise
+            raise e
 
     async def close(self):
         if self._browser and self._browser.is_connected(): await self._browser.close()
@@ -37,10 +35,31 @@ class PlaywrightAdapter(BrowserAdapter):
         self._browser, self._page, self._playwright, self.is_connected = None, None, None, False
         logger.info("Playwright connection closed.")
 
+    async def get_page_content(self) -> str:
+        await self.connect()
+        logger.info("[BROWSER] Getting simplified page content for agent...")
+        html = await self._page.content()
+        soup = BeautifulSoup(html, 'html.parser')
+        for script in soup(["script", "style"]): script.extract()
+        
+        element_summaries = []
+        interactive_tags = soup.find_all(['a', 'button', 'input', 'textarea', 'select', 'label'])
+        interactive_tags.extend(soup.find_all(contenteditable='true'))
+
+        for tag in interactive_tags:
+            summary = f"<{tag.name}"
+            attrs = {k: v for k, v in tag.attrs.items() if k in ['id', 'class', 'aria-label', 'placeholder', 'name', 'type', 'href', 'contenteditable']}
+            for k, v in attrs.items():
+                summary += f' {k}="{" ".join(v) if isinstance(v, list) else v}"'
+            text = tag.get_text(strip=True)
+            summary += f">{text[:100]}</{tag.name}>" if text else "/>"
+            element_summaries.append(summary)
+        return " ".join(element_summaries)
+
     async def navigate(self, url: str):
         await self.connect()
         logger.info(f"[BROWSER] Navigating to: {url}")
-        await self._page.goto(url)
+        await self._page.goto(url, wait_until='domcontentloaded')
 
     async def click(self, selector: str):
         await self.connect()
@@ -64,49 +83,25 @@ class PlaywrightAdapter(BrowserAdapter):
     async def scroll(self, direction: str):
         await self.connect()
         logger.info(f"Scrolling page {direction}")
-        if direction == "down":
-            await self._page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        elif direction == "up":
-            await self._page.evaluate("window.scrollTo(0, 0)")
+        if direction == "down": await self._page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+        else: await self._page.evaluate("window.scrollTo(0, 0)")
         await asyncio.sleep(2)
         
-    async def get_page_content(self) -> str:
+    async def paste(self, selector: str):
+        """Pastes content from the clipboard into the selected element."""
         await self.connect()
-        logger.info("[BROWSER] Getting simplified page content...")
-        try:
-            html = await self._page.content()
-            soup = BeautifulSoup(html, 'html.parser')
-            interactive_elements = soup.find_all(['a', 'button', 'input', 'textarea', 'select', 'label'])
-            interactive_elements.extend(soup.find_all(contenteditable='true'))
-            element_summaries = []
-            for element in interactive_elements:
-                summary = f"<{element.name}"
-                attrs_to_check = ['id', 'class', 'aria-label', 'placeholder', 'name', 'type', 'href', 'contenteditable']
-                for attr in attrs_to_check:
-                    if element.has_attr(attr):
-                        value = element[attr]
-                        if isinstance(value, list): value = " ".join(value)
-                        summary += f' {attr}="{value[:100]}"'
-                text = element.get_text(strip=True)
-                summary += f">{text[:100]}</{element.name}>" if text else "/>"
-                element_summaries.append(summary)
-            return " ".join(element_summaries)
-        except Exception as e:
-            logger.error(f"Failed to get page content: {e}")
-            return "Error: Could not retrieve page content."
-
-    async def wait_for_element(self, selector: str, timeout: int = 15000):
-        await self.connect()
-        logger.info(f"[BROWSER] Waiting for element '{selector}'")
-        await self._page.wait_for_selector(selector, timeout=timeout)
-
+        logger.info(f"[BROWSER] Pasting clipboard content into '{selector}'")
+        await self._page.focus(selector)
+        
+        # Determine the correct modifier key based on the operating system
+        modifier = "Meta" if platform.system() == "Darwin" else "Control"
+        await self._page.keyboard.press(f"{modifier}+V")
+        
     async def extract_data(self, selector: str, fields: Dict[str, str], limit: int) -> List[Dict[str, Any]]:
         await self.connect()
-        logger.info(f"Extracting data from '{selector}' (limit: {limit})")
-        
+        logger.info(f"Extracting data from '{selector}' with limit {limit}")
         results = []
         elements = await self._page.query_selector_all(selector)
-        
         for i, element in enumerate(elements):
             if i >= limit: break
             item_data = {}
@@ -115,7 +110,6 @@ class PlaywrightAdapter(BrowserAdapter):
                     sub_element = await element.query_selector(sub_selector)
                     item_data[field_name] = await sub_element.inner_text() if sub_element else None
                 except Exception as e:
-                    logger.warning(f"Could not extract field '{field_name}' using selector '{sub_selector}': {e}")
-                    item_data[field_name] = None
+                    item_data[field_name] = f"Error extracting: {e}"
             results.append(item_data)
         return results
