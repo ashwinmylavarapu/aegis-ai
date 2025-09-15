@@ -58,6 +58,7 @@ def should_continue(state: AgentState) -> str:
         logger.warning(f"Max steps ({state['max_steps']}) reached. Halting execution.")
         return "end"
     
+    # Check the AI's INTENT in the last turn of history
     last_turn = state['history'][-1]
     if last_turn['type'] == 'ai':
         for tool_call in last_turn.get('content', []):
@@ -111,7 +112,7 @@ class Orchestrator:
         logger.error(f"Unknown tool called: {tool_name}")
         return f"Error: Tool '{tool_name}' not found."
 
-    async def run(self, goal: Goal, max_steps: int = 150): # Increased recursion limit
+    async def run(self, goal: Goal, max_steps: int = 150):
         initial_state = {
             "goal": goal,
             "history": [{"type": "human", "content": goal.prompt}],
@@ -122,10 +123,14 @@ class Orchestrator:
         runnable_config = {"configurable": {"orchestrator_instance": self, **self.config}, "recursion_limit": max_steps}
         
         final_state = None
+        # --- THIS IS THE FIX ---
+        # The final output of the graph is the last event streamed.
+        # We capture every event and the last one will be our final state.
         async for event in self.workflow.astream(initial_state, runnable_config):
-            if END in event:
-                final_state = event[END]
-                break
+            if "agent" in event:
+                final_state = event["agent"]
+            elif "tools" in event:
+                final_state = event["tools"]
         
         await self.browser_adapter.close()
         return final_state
