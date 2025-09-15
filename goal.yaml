@@ -1,8 +1,43 @@
-run_id: "linkedin-author-extraction-02"
-description: "Find the names of the authors of the last 10 posts on the LinkedIn feed."
+run_id: "image-then-charsheet-01"
+description: "Generate an image of a character, then a character sheet for them."
 goal_type: natural_language
 prompt: |
-  1. Go to https://colab.research.google.com/drive/15jp9wJLMRNdEthgiScobckXsSJ2nwLtx?authuser=3
-  2. Click on Runtime
-  3. Click on Run all
-
+  1. Go to https://gemini.google.com/u/2/app
+  2. In the text box, enter the prompt: "A stunningly beautiful south Indian woman mid 20s. Traditionally beautiful with a round  visage. close portrait. Hyperrealistic. 
+  3. Click on the submit button at the bottom right.
+  4. Wait for 40 seconds for the image to be generated.
+  5. In the text box, enter the prompt: Change to a waist-level shot, sitting on the sand with a wide smile, wearing the same bold 2 piece attire, beachwear. Maintain identity.
+  6. Click on the submit button at the bottom right.
+  7. Wait for 40 seconds for the image to be generated.
+  8. In the text box, enter the prompt: Change to a full-length shot, sitting with legs wide open in a yoga pose on a beach towel, wearing the same bold 2 piece attire, beachwear. Maintain identity.
+  9. Click on the submit button at the bottom right.
+  10. Wait for 40 seconds for the image to be generated.
+  11. In the text box, enter the prompt: Change to a full-length shot, in a lush green park. Change attire to casual jeans and a t-shirt. Change pose to sitting on a park bench. Maintain identity.
+  12. Click on the submit button at the bottom right.
+  13. Wait for 40 seconds for the image to be generated.
+  14. In the text box, enter the prompt: Change to a full-length shot, in a park, doing a yoga tree pose, wearing athletic wear. Maintain identity.
+  15. Click on the submit button at the bottom right.
+  16. Wait for 40 seconds for the image to be generated.
+  17. In the text box, enter the prompt: Change to a full-length shot, in a park, running with a joyful expression, wearing athletic wear. Maintain identity.
+  18. Click on the submit button at the bottom right.
+  19. Wait for 40 seconds for the image to be generated.
+  20. In the text box, enter the prompt: Change to a waist-level shot, in a coffee house. Change attire to a modern business suit. Change pose to sitting at a table with a laptop. Maintain identity.
+  21. Click on the submit button at the bottom right.
+  22. Wait for 40 seconds for the image to be generated.
+  23. In the text box, enter the prompt: Change to a knee-level shot, in an office, wearing professional business attire. Change pose to standing confidently. Maintain identity.
+  24. Click on the submit button at the bottom right.
+  25. Wait for 40 seconds for the image to be generated.
+  26. In the text box, enter the prompt: Change to a full-length shot, in a professional setting, wearing an elegant dress. Change pose to standing near a window. Maintain identity.
+  27. Click on the submit button at the bottom right.
+  28. Wait for 40 seconds for the image to be generated.
+  29. In the text box, enter the prompt: Change to a portrait shot, in a dim-lit home. Change attire to loungewear. Change expression to a thoughtful look. Maintain identity.
+  30. Click on the submit button at the bottom right.
+  31. Wait for 40 seconds for the image to be generated.
+  32. In the text box, enter the prompt: Change to a waist-level shot, in a living room, wearing comfortable clothes. Change pose to sitting on a sofa. Maintain identity.
+  33. Click on the submit button at the bottom right.
+  34. Wait for 40 seconds for the image to be generated.
+  35. In the text box, enter the prompt: Change to a full-length shot, in a home setting, with an annoyed expression. Change pose to standing by the kitchen counter. Maintain identity.
+  36. Click on the submit button at the bottom right.
+  37. Wait for 40 seconds for the image to be generated.
+  38. In the text box, enter the prompt: Change to a full-length shot, at a party, wearing a stylish evening gown. Change pose to dancing with a joyful expression. Maintain identity.
+  39. Click on the submit button at the bottom right.

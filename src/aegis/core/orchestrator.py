@@ -40,6 +40,7 @@ async def executor_step(state: AegisState):
         if action_name == 'finish_task':
             observation = f"Task finished with summary: {args.get('summary')}"
         else:
+            # Dynamically call the correct method on the adapter
             result = await getattr(browser, action_name)(**args)
             observation = f"Tool '{action_name}' executed successfully. Result: {result}"
     except Exception as e:
@@ -75,6 +76,7 @@ class Orchestrator:
         initial_state = {"run_id": goal.run_id, "goal": goal, "config": self.config, "history": [], "result": None}
         final_state = initial_state
         try:
+            await self.browser_adapter.connect()
             async for event in self.workflow.astream(initial_state, {"recursion_limit": 100}):
                 logger.debug(f"Workflow event: {event}")
                 if "agent" in event: final_state = event["agent"]

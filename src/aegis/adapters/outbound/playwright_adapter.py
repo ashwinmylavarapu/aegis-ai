@@ -37,30 +37,6 @@ class PlaywrightAdapter(BrowserAdapter):
         self._browser, self._page, self._playwright, self.is_connected = None, None, None, False
         logger.info("Playwright connection closed.")
 
-    async def get_page_content(self) -> str:
-        await self.connect()
-        logger.info("[BROWSER] Getting simplified page content...")
-        try:
-            html = await self._page.content()
-            soup = BeautifulSoup(html, 'html.parser')
-            interactive_elements = soup.find_all(['a', 'button', 'input', 'textarea', 'select', 'label'])
-            element_summaries = []
-            for element in interactive_elements:
-                summary = f"<{element.name}"
-                attrs_to_check = ['id', 'class', 'aria-label', 'placeholder', 'name', 'type', 'href']
-                for attr in attrs_to_check:
-                    if element.has_attr(attr):
-                        value = element[attr]
-                        if isinstance(value, list): value = " ".join(value)
-                        summary += f' {attr}="{value[:100]}"'
-                text = element.get_text(strip=True)
-                summary += f">{text[:100]}</{element.name}>" if text else "/>"
-                element_summaries.append(summary)
-            return " ".join(element_summaries)
-        except Exception as e:
-            logger.error(f"Failed to get page content: {e}")
-            return "Error: Could not retrieve page content."
-
     async def navigate(self, url: str):
         await self.connect()
         logger.info(f"[BROWSER] Navigating to: {url}")
@@ -94,7 +70,31 @@ class PlaywrightAdapter(BrowserAdapter):
             await self._page.evaluate("window.scrollTo(0, 0)")
         await asyncio.sleep(2)
         
-    # --- FIX: Restore the missing methods ---
+    async def get_page_content(self) -> str:
+        await self.connect()
+        logger.info("[BROWSER] Getting simplified page content...")
+        try:
+            html = await self._page.content()
+            soup = BeautifulSoup(html, 'html.parser')
+            interactive_elements = soup.find_all(['a', 'button', 'input', 'textarea', 'select', 'label'])
+            interactive_elements.extend(soup.find_all(contenteditable='true'))
+            element_summaries = []
+            for element in interactive_elements:
+                summary = f"<{element.name}"
+                attrs_to_check = ['id', 'class', 'aria-label', 'placeholder', 'name', 'type', 'href', 'contenteditable']
+                for attr in attrs_to_check:
+                    if element.has_attr(attr):
+                        value = element[attr]
+                        if isinstance(value, list): value = " ".join(value)
+                        summary += f' {attr}="{value[:100]}"'
+                text = element.get_text(strip=True)
+                summary += f">{text[:100]}</{element.name}>" if text else "/>"
+                element_summaries.append(summary)
+            return " ".join(element_summaries)
+        except Exception as e:
+            logger.error(f"Failed to get page content: {e}")
+            return "Error: Could not retrieve page content."
+
     async def wait_for_element(self, selector: str, timeout: int = 15000):
         await self.connect()
         logger.info(f"[BROWSER] Waiting for element '{selector}'")
@@ -113,13 +113,9 @@ class PlaywrightAdapter(BrowserAdapter):
             for field_name, sub_selector in fields.items():
                 try:
                     sub_element = await element.query_selector(sub_selector)
-                    if sub_element:
-                        item_data[field_name] = await sub_element.inner_text()
-                    else:
-                        item_data[field_name] = None
+                    item_data[field_name] = await sub_element.inner_text() if sub_element else None
                 except Exception as e:
                     logger.warning(f"Could not extract field '{field_name}' using selector '{sub_selector}': {e}")
                     item_data[field_name] = None
             results.append(item_data)
         return results
-    # --- END FIX ---

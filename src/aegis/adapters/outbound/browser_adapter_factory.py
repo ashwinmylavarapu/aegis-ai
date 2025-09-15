@@ -3,7 +3,7 @@ from loguru import logger
 
 from .browser_adapter import BrowserAdapter
 from .noop_browser_adapter import NoOpBrowserAdapter
-from .browser_mcp_adapter import BrowserMCPAdapter # Changed import
+from .playwright_adapter import PlaywrightAdapter
 
 _browser_adapter_instance = None
 
@@ -17,11 +17,11 @@ def get_browser_adapter(config: Dict[str, Any]) -> BrowserAdapter:
     adapter_type = browser_config.get("adapter", "noop")
     logger.info(f"Initializing browser adapter of type: '{adapter_type}'")
 
-    if adapter_type == "browsermcp": # Changed condition
-        _browser_adapter_instance = BrowserMCPAdapter(config)
+    if adapter_type == "playwright":
+        _browser_adapter_instance = PlaywrightAdapter(config)
     elif adapter_type == "noop":
         _browser_adapter_instance = NoOpBrowserAdapter()
     else:
-        raise ValueError(f"Unknown browser adapter type in config: {adapter_type}")
+        raise ValueError(f"Unknown browser adapter type: {adapter_type}")
     
     return _browser_adapter_instance

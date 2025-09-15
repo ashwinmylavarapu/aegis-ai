@@ -1,5 +1,5 @@
 logging:
-  level: "INFO"
+  level: "DEBUG"
 
 llm:
   provider: "google_genai_studio"
@@ -15,9 +15,6 @@ llm:
 
 # Configure the browser adapter to use browsermcp
 browser:
-  adapter: "browsermcp"
-
-# NEW: Configure the correct WebSocket URL for your local server
-browser_mcp:
-  url: "http://localhost:9003/"
-# The browser_mcp section is no longer needed and can be removed.
+  adapter: "playwright"
+  playwright:
+    cdp_endpoint: "http://localhost:9222"

@@ -1,6 +1,3 @@
-"""
-Core Pydantic models for Aegis data structures.
-"""
 from typing import List, Dict, Any, Literal, Optional
 from pydantic import BaseModel, Field
 import uuid
@@ -13,17 +10,13 @@ class Goal(BaseModel):
     prompt: str
 
 class Step(BaseModel):
-    """Represents a single step in an execution plan."""
-    skill: Optional[str] = None
-    action: Optional[str] = None
+    """Represents a single action decided by the agent."""
+    action: str
     url: Optional[str] = None
     selector: Optional[str] = None
     text: Optional[str] = None
     key: Optional[str] = None
-    limit: Optional[int] = None
-    fields: Optional[Dict[str, str]] = None # Changed from List[str] to Dict[str, str]
-    output_file: Optional[str] = None
-    wait_for_navigation: bool = False
-    timeout: Optional[int] = None
-    duration_seconds: Optional[int] = None
     direction: Optional[str] = None
+    duration_seconds: Optional[int] = None
+    limit: Optional[int] = None
+    fields: Optional[Dict[str, str]] = None
