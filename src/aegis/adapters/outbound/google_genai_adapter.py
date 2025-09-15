@@ -20,7 +20,7 @@ def convert_history_to_gemini(history: List[Dict[str, Any]]) -> List[Dict[str, A
             gemini_history.append({'role': 'function', 'parts': [{'function_response': {'name': message.get('name'), 'response': {'content': message.get('content')}}}]})
     return gemini_history
 
-cclass GoogleGenAIAdapter(LLMAdapter):
+class GoogleGenAIAdapter(LLMAdapter):
     def __init__(self, config: Dict[str, Any]):
         llm_config = config.get("llm", {}).get("google_genai_studio", {})
         api_key, model_name = llm_config.get("api_key"), llm_config.get("model", "gemini-pro")
@@ -33,15 +33,18 @@ cclass GoogleGenAIAdapter(LLMAdapter):
             FunctionDeclaration(name="type_text", description="Types text into an element.", parameters={"type": "object", "properties": {"selector": {"type": "string"}, "text": {"type": "string"}}, "required": ["selector", "text"]}),
             FunctionDeclaration(name="click", description="Clicks an element.", parameters={"type": "object", "properties": {"selector": {"type": "string"}}, "required": ["selector"]}),
             FunctionDeclaration(name="press_key", description="Presses a key on an element.", parameters={"type": "object", "properties": {"selector": {"type": "string"},"key": {"type": "string"}}, "required": ["selector", "key"]}),
+            FunctionDeclaration(name="wait", description="Pauses for a number of seconds.", parameters={"type": "object", "properties": {"duration_seconds": {"type": "integer"}}, "required": ["duration_seconds"]}),
+            FunctionDeclaration(name="scroll", description="Scrolls the page.", parameters={"type": "object", "properties": {"direction": {"type": "string", "enum": ["up", "down"]}}, "required": ["direction"]}),
             FunctionDeclaration(name="paste", description="Pastes content from the clipboard into a focused element.", parameters={"type": "object", "properties": {"selector": {"type": "string"}}, "required": ["selector"]}),
+            FunctionDeclaration(name="extract_data", description="Extracts data from a list of elements.", parameters={"type": "object", "properties": {"selector": {"type": "string"}, "limit": {"type": "integer"}, "fields": {"type": "object", "description": "A dictionary where keys are field names and values are CSS selectors."}}}),
             FunctionDeclaration(name="finish_task", description="Call when the goal is accomplished.", parameters={"type": "object", "properties": {"summary": {"type": "string"}}, "required": ["summary"]}),
         ]
         
         self.system_instruction = (
             "You are an expert AI web automation agent. You operate in a 'Look, Think, Act' cycle. "
-            "1. **Look**: Use `get_page_content` to understand the page. "
-            "2. **Think**: Decide the next action. Construct a precise CSS selector. "
-            "3. **Act**: Execute a tool. Use `paste` to paste content from the clipboard. "
+            "1. **Look**: Always use `get_page_content` to understand the page. "
+            "2. **Think**: Based on the content and goal, decide the next action and construct a precise CSS selector. "
+            "3. **Act**: Execute the tool. Use `paste` to paste content from the clipboard. "
             "4. Repeat. If an action fails, use `get_page_content` again to re-evaluate. When the goal is complete, use `finish_task`."
         )
 

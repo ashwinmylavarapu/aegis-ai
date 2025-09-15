@@ -3,28 +3,17 @@ description: "Generate an image of a character, then a character sheet for them.
 goal_type: natural_language
 prompt: |
   1. Go to https://gemini.google.com/u/2/app
-  2. In the text box, enter the prompt: "A stunningly beautiful south Indian woman mid 20s. Traditionally beautiful wearing kurta in a coffee house. A close portrait showing her traditional beauty with gentle oval visage. Hyperrealistic"
+  1b. Paste the image from the clipboard with 'Command key + v'
+  2. In the text box, enter the prompt: "Change to a waist-level shot, wearing kaftan at a beach. Maintain identity"
   3. Click on the submit button at the bottom right.
   4. Wait for 40 seconds for the image to be generated.
-  5. In the text box, enter the prompt: Change to a headshot, with a wide smile and sparkling eyes. Maintain identity.
-  6. Click on the submit button at the bottom right.
-  7. Wait for 40 seconds for the image to be generated.
-  8. In the text box, enter the prompt: Change to a headshot with an annoyed expression. Maintain identity.
-  9. Click on the submit button at the bottom right.
-  10. Wait for 40 seconds for the image to be generated.
-  11. In the text box, enter the prompt: Change to a headshot with a sad and thoughtful look. Maintain identity.
-  12. Click on the submit button at the bottom right.
-  13. Wait for 40 seconds for the image to be generated.
-  14. In the text box, enter the prompt: Change to a headshot showing a full laugh with a head tilted slightly. Maintain identity.
-  15. Click on the submit button at the bottom right.
-  16. Wait for 40 seconds for the image to be generated.
-  17. In the text box, enter the prompt: Change to a waist-level shot, on a vibrant, sun-drenched beach, wearing a bold two-piece bikini with a floral pattern. Maintain identity.
+  17. In the text box, enter the prompt: Change to a waist-level shot, on a vibrant, sun-drenched beach, wearing a beach wear with a floral pattern. Maintain identity.
   18. Click on the submit button at the bottom right.
   19. Wait for 40 seconds for the image to be generated.
-  20. In the text box, enter the prompt: Change to a full-length shot, sitting on the sand with a wide smile, wearing the same bold bikini. Maintain identity.
+  20. In the text box, enter the prompt: Change to a full-length shot, sitting on the sand with a wide smile, wearing the beach wear. Maintain identity.
   21. Click on the submit button at the bottom right.
   22. Wait for 40 seconds for the image to be generated.
-  23. In the text box, enter the prompt: Change to a full-length shot, sitting with legs wide open in a yoga pose on a beach towel, wearing the same bold bikini. Maintain identity.
+  23. In the text box, enter the prompt: Change to a full-length shot, sitting with legs wide open in a yoga pose on a beach towel, wearing the same beach wear. Maintain identity.
   24. Click on the submit button at the bottom right.
   25. Wait for 40 seconds for the image to be generated.
   26. In the text box, enter the prompt: Change to a full-length shot, in a lush green park. Change attire to casual jeans and a t-shirt. Change pose to sitting on a park bench. Maintain identity.
@@ -68,3 +57,12 @@ prompt: |
   64. Wait for 40 seconds for the image to be generated.
   65. In the text box, enter the prompt: Change to a full-length back profile, walking away on a cobblestone street in a winter coat. Maintain identity.
   66. Click on the submit button at the bottom right.
+  67. In the text box, enter the prompt: Change to a headshot, with a wide smile and sparkling eyes. Maintain identity.
+  68. Click on the submit button at the bottom right.
+  69. Wait for 40 seconds for the image to be generated.
+  70. In the text box, enter the prompt: Change to a headshot with a sad and thoughtful look. Maintain identity.
+  71. Click on the submit button at the bottom right.
+  72. Wait for 40 seconds for the image to be generated.
+  73. In the text box, enter the prompt: Change to a headshot showing a full laugh with a head tilted slightly. Maintain identity.
+  74. Click on the submit button at the bottom right.
+  75. Wait for 40 seconds for the image to be generated.
