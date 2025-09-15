@@ -4,15 +4,13 @@ from typing import Dict, Any, List, Optional
 from loguru import logger
 from playwright.async_api import async_playwright, Browser, Page, Playwright
 from bs4 import BeautifulSoup
-
 from .browser_adapter import BrowserAdapter
 
 class PlaywrightAdapter(BrowserAdapter):
     def __init__(self, config: Dict[str, Any]):
         self.config = config.get("browser", {}).get("playwright", {})
         self.cdp_endpoint = self.config.get("cdp_endpoint")
-        if not self.cdp_endpoint:
-            raise ValueError("Playwright config missing 'cdp_endpoint' in config.yaml")
+        if not self.cdp_endpoint: raise ValueError("Playwright config missing 'cdp_endpoint'")
         self._playwright: Optional[Playwright] = None
         self._browser: Optional[Browser] = None
         self._page: Optional[Page] = None
@@ -24,7 +22,6 @@ class PlaywrightAdapter(BrowserAdapter):
         self._playwright = await async_playwright().start()
         try:
             self._browser = await self._playwright.chromium.connect_over_cdp(self.cdp_endpoint)
-            # Use the first available page, or create a new one.
             self._page = self._browser.contexts[0].pages[0] if self._browser.contexts and self._browser.contexts[0].pages else await (await self._browser.new_context()).new_page()
             self.is_connected = True
             logger.success("Successfully connected to browser.")
@@ -33,10 +30,8 @@ class PlaywrightAdapter(BrowserAdapter):
             raise e
 
     async def close(self):
-        if self._browser and self._browser.is_connected():
-            await self._browser.close()
-        if self._playwright:
-            await self._playwright.stop()
+        if self._browser and self._browser.is_connected(): await self._browser.close()
+        if self._playwright: await self._playwright.stop()
         self._browser, self._page, self._playwright, self.is_connected = None, None, None, False
         logger.info("Playwright connection closed.")
 
@@ -45,8 +40,7 @@ class PlaywrightAdapter(BrowserAdapter):
         logger.info("[BROWSER] Getting simplified page content for agent...")
         html = await self._page.content()
         soup = BeautifulSoup(html, 'html.parser')
-        for script in soup(["script", "style"]):
-            script.extract()
+        for script in soup(["script", "style"]): script.extract()
         
         element_summaries = []
         interactive_tags = soup.find_all(['a', 'button', 'input', 'textarea', 'select', 'label'])
@@ -89,10 +83,8 @@ class PlaywrightAdapter(BrowserAdapter):
     async def scroll(self, direction: str):
         await self.connect()
         logger.info(f"Scrolling page {direction}")
-        if direction == "down":
-            await self._page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        else:
-            await self._page.evaluate("window.scrollTo(0, 0)")
+        if direction == "down": await self._page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+        else: await self._page.evaluate("window.scrollTo(0, 0)")
         await asyncio.sleep(2)
 
     async def paste(self, selector: str):

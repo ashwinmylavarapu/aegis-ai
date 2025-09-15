@@ -44,7 +44,7 @@ class GoogleGenAIAdapter(LLMAdapter):
             "You are an expert AI web automation agent. You operate in a 'Look, Think, Act' cycle. "
             "1. **Look**: Always use `get_page_content` to understand the page. "
             "2. **Think**: Based on the content and goal, decide the next action and construct a precise CSS selector. "
-            "3. **Act**: Execute the tool. Use `paste` to paste content from the clipboard. "
+            "3. **Act**: Execute the tool (`type_text`, `click`, `paste` etc.). "
             "4. Repeat. If an action fails, use `get_page_content` again to re-evaluate. When the goal is complete, use `finish_task`."
         )
 

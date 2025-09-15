@@ -9,7 +9,7 @@ llm:
     api_key: "AIzaSyAUQhDu4_Y8wLjmFXN9gWhlDCJ3-Dey4-s" # Replace with your actual key
 
   openai:
-    model: "Gemini-2.5-Flash"
+    model: "Gemini-2.0-Flash-Preview"
     api_key: "kQMgOqm4E1QF80V3UZY_Yqiu-w3pEi_k7P_KV19m8oY" # Replace with your actual key
     base_url: "https://api.poe.com/v1" # Optional, for proxy
 
