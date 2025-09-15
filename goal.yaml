@@ -21,5 +21,5 @@ prompt: |
      c. Immediately after attempting the click, scroll down 5 final times to ensure all content is loaded.
   
   6. Extract the data for up to 30 posts, getting the author's name and the post text for each one.
-  7. Review the extracted data. If any posts are by "Aakash Gupta", collect them.
+  7. Review the extracted data. If any posts are by "Philipp SchmidPhilipp Schmid", collect them.
   8. Call `finish_task` with a JSON summary of the posts you found. If no posts by "Aakash Gupta" were found after this extensive search, state that in the summary.
