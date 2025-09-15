@@ -58,7 +58,6 @@ def should_continue(state: AgentState) -> str:
         logger.warning(f"Max steps ({state['max_steps']}) reached. Halting execution.")
         return "end"
     
-    # Check the AI's INTENT in the last turn of history
     last_turn = state['history'][-1]
     if last_turn['type'] == 'ai':
         for tool_call in last_turn.get('content', []):
@@ -125,7 +124,7 @@ class Orchestrator:
         final_state = None
         # --- THIS IS THE FIX ---
         # The final output of the graph is the last event streamed.
-        # We capture every event and the last one will be our final state.
+        # We capture every event, and the last one will be our final state.
         async for event in self.workflow.astream(initial_state, runnable_config):
             if "agent" in event:
                 final_state = event["agent"]
