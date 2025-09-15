@@ -3,8 +3,12 @@ from typing import Dict, Any, List
 from loguru import logger
 import google.generativeai as genai
 from google.generativeai.types import HarmCategory, HarmBlockThreshold, FunctionDeclaration, Tool
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry, stop_after_attempt, wait_exponential, before_sleep_log
 from .base import LLMAdapter
+
+def log_retry_attempt(retry_state):
+    """Custom log function for tenacity to show retry attempts."""
+    logger.warning(f"Retrying API call (attempt {retry_state.attempt_number})...")
 
 def convert_history_to_gemini(history: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     gemini_history = []
@@ -51,7 +55,12 @@ class GoogleGenAIAdapter(LLMAdapter):
         self.model = genai.GenerativeModel(model_name, tools=tool_declarations, system_instruction=self.system_instruction)
         logger.info(f"GoogleGenAIAdapter initialized for model: {model_name}")
 
-    @retry(wait=wait_exponential(multiplier=1, min=2, max=30), stop=stop_after_attempt(3), reraise=True)
+    @retry(
+        wait=wait_exponential(multiplier=2, min=5, max=60), # Wait 5s, then 10s, then 20s
+        stop=stop_after_attempt(3),
+        before_sleep=log_retry_attempt,
+        reraise=True
+    )
     async def generate_plan(self, goal: str, history: List[Dict[str, Any]] = []) -> List[Dict[str, Any]]:
         full_conversation = [{"role": "user", "parts": [{"text": goal}]}]
         full_conversation.extend(convert_history_to_gemini(history))

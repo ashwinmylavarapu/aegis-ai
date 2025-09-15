@@ -19,7 +19,6 @@ async def agent_step(state: AegisState):
     goal, config, history = state['goal'], state['config'], state.get('history', [])
     llm_adapter = get_llm_adapter(config)
     
-    # Truncate history to keep the context manageable for the LLM
     truncated_history = history[-10:]
     next_steps = await llm_adapter.generate_plan(goal.prompt, truncated_history)
     
