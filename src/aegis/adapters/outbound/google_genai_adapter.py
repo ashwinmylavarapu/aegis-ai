@@ -23,7 +23,7 @@ def convert_history_to_gemini(history: List[Dict[str, Any]]) -> List[Dict[str, A
             tool_responses = turn["content"]
             gemini_parts = []
             for resp in tool_responses:
-                gemini_parts.append({"function_response": {"name": resp["tool_name"], "response": {"content": resp["tool_output"]}}})
+                gemini_parts.append({"function_response": {"name": resp["tool_name"], "response": {"content": json.dumps(resp["tool_output"])}}})
             gemini_history.append({"role": "tool", "parts": gemini_parts})
     return gemini_history
 
@@ -38,68 +38,38 @@ class GoogleGenAIAdapter(LLMAdapter):
         
         genai.configure(api_key=api_key)
         
+        # --- FIX Part 2: Define the new, more reliable toolset ---
         tool_declarations = [
             FunctionDeclaration(
                 name="find_element",
-                description="Finds the CSS selector for a single element on the page based on a natural language description. Use this for single interactions like clicking.",
-                parameters={"type": "object", "properties": {"query": {"type": "string", "description": "A simple description of the element, e.g., 'the search bar'."}}, "required": ["query"]},
+                description="Finds the CSS selector for a single, unique element on the page.",
+                parameters={"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]},
             ),
             FunctionDeclaration(
-                name="type_text",
-                description="Types text into an element identified by its CSS selector.",
-                parameters={"type": "object", "properties": {"selector": {"type": "string"}, "text": {"type": "string"}}, "required": ["selector", "text"]},
+                name="find_elements",
+                description="Finds all elements matching a CSS selector and returns a list of their unique selectors.",
+                parameters={"type": "object", "properties": {"selector": {"type": "string"}, "limit": {"type": "integer"}}, "required": ["selector"]},
             ),
             FunctionDeclaration(
-                name="click",
-                description="Clicks an element identified by its CSS selector.",
-                parameters={"type": "object", "properties": {"selector": {"type": "string"}}, "required": ["selector"]},
+                name="get_post_details",
+                description="Given a unique selector for a single post, extracts the author and text. Use this after `find_elements`.",
+                parameters={"type": "object", "properties": {"post_selector": {"type": "string"}}, "required": ["post_selector"]},
             ),
-            FunctionDeclaration(
-                name="scroll",
-                description="Scrolls the page down to load more content.",
-                parameters={"type": "object", "properties": {"direction": {"type": "string", "enum": ["down"]}}, "required": ["direction"]},
-            ),
-            FunctionDeclaration(
-                name="navigate",
-                description="Navigates the browser to a specific URL.",
-                parameters={"type": "object", "properties": {"url": {"type": "string"}}, "required": ["url"]},
-            ),
-            FunctionDeclaration(
-                name="wait_for_element",
-                description="Waits for a specific element to appear on the page before proceeding. Useful for dynamic content.",
-                parameters={"type": "object", "properties": {"selector": {"type": "string"}, "timeout": {"type": "integer", "description": "How many seconds to wait."}}, "required": ["selector"]},
-            ),
-            FunctionDeclaration(
-                name="extract_data",
-                description="Extracts a list of structured data from the page, like post details or search results.",
-                parameters={
-                    "type": "object",
-                    "properties": {
-                        "selector": {"type": "string", "description": "The CSS selector for the repeating container element (e.g., a list item)."},
-                        "fields": {"type": "object", "description": "A dictionary where keys are field names and values are CSS selectors relative to the container."},
-                        "limit": {"type": "integer", "description": "The maximum number of items to extract."}
-                    },
-                    "required": ["selector", "fields"]
-                },
-            ),
-            FunctionDeclaration(
-                name="linkedin_login",
-                description="Logs the user into LinkedIn using credentials from environment variables.",
-            ),
-            FunctionDeclaration(
-                name="finish_task",
-                description="Call this function when the high-level goal is fully accomplished, either successfully or because the requested information could not be found.",
-                parameters={"type": "object", "properties": {"summary": {"type": "string"}}, "required": ["summary"]},
-            ),
+            FunctionDeclaration(name="navigate", description="Navigates to a URL.", parameters={"type": "object", "properties": {"url": {"type": "string"}}, "required": ["url"]}),
+            FunctionDeclaration(name="scroll", description="Scrolls the page down.", parameters={"type": "object", "properties": {"direction": {"type": "string", "enum": ["down"]}}, "required": ["direction"]}),
+            FunctionDeclaration(name="click", description="Clicks an element.", parameters={"type": "object", "properties": {"selector": {"type": "string"}}, "required": ["selector"]}),
+            FunctionDeclaration(name="finish_task", description="Call when the goal is accomplished.", parameters={"type": "object", "properties": {"summary": {"type": "string"}}, "required": ["summary"]}),
         ]
         
         self.system_instruction = (
-            "You are a web automation robot. Your only purpose is to execute a numbered list of instructions provided by the user. You must follow these rules absolutely:\n"
-            "1.  **Examine History**: Look at the numbered plan from the user and the list of tools you have already executed.\n"
-            "2.  **Determine Next Step**: Identify the single next numbered step from the user's plan that you have not yet executed.\n"
-            "3.  **Execute ONE Tool for that Step**: Call the single tool that completes that specific step. For example, if the next step is `3c. Scroll down 2 times`, your ONLY valid action is to call the `scroll` tool. If the next step is `4a. Find the button...`, your ONLY valid action is to call `find_element`.\n"
-            "4.  **DO NOT DEVIATE**: Do not repeat steps. Do not skip steps. Do not do anything other than the very next step in the plan.\n"
-            "5.  **FINISH**: After you execute the tool for the final numbered step, your next and only action MUST be to call `finish_task`."
+            "You are a web automation robot. Your only purpose is to execute the user's numbered plan. You must follow the rules absolutely:\n"
+            "1. **Determine Next Step**: Identify the next numbered step from the user's plan that you have not yet executed.\n"
+            "2. **Execute ONE Tool**: Call the single tool that completes that specific step.\n"
+            "**CRITICAL WORKFLOW FOR POSTS**:\n"
+            "  a. First, use `find_elements` to get a list of unique selectors for all post containers.\n"
+            "  b. Then, for each unique selector in the list, you MUST call `get_post_details` to extract its author and text.\n"
+            "  c. Only after processing all posts, analyze the results and decide if the goal is met.\n"
+            "3. **FINISH**: After completing the final step, call `finish_task`."
         )
 
         self.model = genai.GenerativeModel(model_name, tools=tool_declarations, system_instruction=self.system_instruction)

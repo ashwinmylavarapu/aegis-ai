@@ -59,20 +59,11 @@ class PlaywrightAdapter(BrowserAdapter):
         
         for tag in soup.find_all(interactive_tags):
             text = " ".join(tag.get_text(strip=True).split())
-            aria_label = tag.get('aria-label', '')
-            placeholder = tag.get('placeholder', '')
-            name = tag.get('name', '')
-            
-            description = " ".join(filter(None, [text, aria_label, placeholder, name]))
+            description = text or tag.get('aria-label', '') or tag.get('placeholder', '') or tag.get('name', '')
             
             if description:
-                # --- THIS IS THE FIX ---
-                # Use the more robust ':has-text()' selector for container elements like buttons and links.
-                # This finds the element even if the text is in a nested tag (like a <span>).
-                # We escape any double quotes within the text to create a valid CSS selector string.
                 escaped_text = text.replace('"', '\\"')
                 selector = f'{tag.name}:has-text("{escaped_text}")'
-                
                 elements.append({"selector": selector, "description": description})
                 
         return elements
@@ -80,21 +71,15 @@ class PlaywrightAdapter(BrowserAdapter):
     async def find_element(self, query: str) -> str:
         await self.connect()
         logger.info(f"[BROWSER] Finding element for query: '{query}'")
-        
         try:
             elements = await self._get_interactive_elements()
-            if not elements:
-                return "Error: No interactive elements found."
-
+            if not elements: return "Error: No interactive elements found."
             choices = {elem['description']: elem['selector'] for elem in elements}
             best_match = process.extractOne(query, choices.keys(), score_cutoff=80)
-            
             if best_match:
-                best_description = best_match[0]
-                selector = choices[best_description]
-                logger.success(f"Found best match for '{query}': '{selector}' (Description: '{best_description}')")
+                selector = choices[best_match[0]]
+                logger.success(f"Found best match for '{query}': '{selector}' (Description: '{best_match[0]}')")
                 return selector
-            
             logger.warning(f"Could not find a suitable element for query: '{query}'")
             return "Error: Element not found."
         except Exception as e:
@@ -105,7 +90,6 @@ class PlaywrightAdapter(BrowserAdapter):
         await self.connect()
         if not url.startswith(('http://', 'https://')):
             url = f"https://{url}"
-            
         logger.info(f"[BROWSER] Navigating to {url}")
         await self._page.goto(url, wait_until="domcontentloaded")
         return f"Successfully navigated to {url}"
@@ -140,14 +124,6 @@ class PlaywrightAdapter(BrowserAdapter):
         text = '\n'.join(chunk for chunk in (phrase.strip() for line in (line.strip() for line in soup.get_text().splitlines()) for phrase in line.split("  ")) if chunk)
         return text
 
-    async def paste(self, selector: str, text: str) -> str:
-        await self.connect()
-        modifier = "Meta" if platform.system() == "Darwin" else "Control"
-        logger.info(f"[BROWSER] Pasting text into '{selector}'")
-        await self._page.focus(selector)
-        await self._page.keyboard.press(f"{modifier}+KeyV", text)
-        return f"Pasted text into {selector}"
-
     async def wait_for_element(self, selector: str, timeout: int = 10) -> str:
         await self.connect()
         logger.info(f"[BROWSER] Waiting for element '{selector}' for {timeout}s")
@@ -164,9 +140,7 @@ class PlaywrightAdapter(BrowserAdapter):
         logger.info(f"[BROWSER] Extracting data from '{selector}' with limit {limit}")
         
         container_elements = await self._page.query_selector_all(selector)
-        
         limit = int(limit)
-        
         if limit > 0:
             container_elements = container_elements[:limit]
             
@@ -175,11 +149,47 @@ class PlaywrightAdapter(BrowserAdapter):
             item_data = {}
             for field_name, field_selector in fields.items():
                 element = await container.query_selector(field_selector)
-                if element:
-                    item_data[field_name] = await element.inner_text()
-                else:
-                    item_data[field_name] = None
+                item_data[field_name] = await element.inner_text() if element else None
             results.append(item_data)
-            
         logger.success(f"Extracted {len(results)} items.")
         return results
+
+    async def find_elements(self, selector: str, limit: int = 0) -> List[str]:
+        await self.connect()
+        logger.info(f"[BROWSER] Finding all elements matching '{selector}'")
+        elements = await self._page.query_selector_all(selector)
+        limit = int(limit)
+        if limit > 0:
+            elements = elements[:limit]
+        
+        unique_selectors = [f"{selector} >> nth={i}" for i in range(len(elements))]
+        logger.success(f"Found {len(unique_selectors)} elements.")
+        return unique_selectors
+
+    # --- THIS IS THE FINAL FIX ---
+    # Upgrading the selectors to be more specific and resilient to ambiguity.
+    async def get_post_details(self, post_selector: str) -> Dict[str, str]:
+        """A specialized tool to reliably extract author and text from a single LinkedIn post."""
+        await self.connect()
+        logger.info(f"[BROWSER] Getting details for post: '{post_selector}'")
+        
+        # A more specific selector for the post text that avoids translated versions.
+        text_selector = "div.update-components-text.relative.update-components-update-v2__commentary"
+        # The selector for the author's name remains reliable.
+        author_selector = "span.update-components-actor__name > span[aria-hidden='true']"
+        
+        try:
+            post_element = self._page.locator(post_selector)
+            
+            # Use .first to ensure we only ever get one element, preventing strict mode violations.
+            author_element = post_element.locator(author_selector).first
+            author_name = await author_element.inner_text(timeout=2000) if await author_element.count() > 0 else "Unknown"
+            
+            text_element = post_element.locator(text_selector).first
+            post_text = await text_element.inner_text(timeout=2000) if await text_element.count() > 0 else ""
+            
+            logger.success(f"Extracted post by '{author_name}'")
+            return {"author": author_name, "text": post_text.strip()}
+        except Exception as e:
+            logger.warning(f"Could not extract details for post '{post_selector}': {e}")
+            return {"author": "Error", "text": str(e)}
