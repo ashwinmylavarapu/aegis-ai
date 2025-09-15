@@ -4,43 +4,62 @@ goal_type: natural_language
 prompt: |
    Go to https://gemini.google.com/u/2/app
    Use the `get_page_content` tool to find the main text input area.
-   Paste the image from the clipboard into that text area
-   In the text box, enter the prompt: Change to a headshot showing a full laugh with a head tilted slightly. 
+   Use the `paste` tool to Paste image from the clipboard into that text area
+
+   In the text box, enter the prompt: Change to a frontal view, looking at the viewer, facing the camera, close-up shot.., sitting on the sand with a wide smile, wearing the beach wear. 
    Click on the submit button at the bottom right.
    Wait for 100 seconds for the image to be generated.
-   In the text box, enter the prompt: Change to a frontal view, looking at the viewer, facing the camera,  full length shot.., sitting on the sand with a wide smile, wearing the beach wear. 
+   In the text box, enter the prompt: Change to a frontal view, looking at the viewer, facing the camera, close-up shot.., sitting with legs wide open in a yoga pose on a beach towel, wearing the same beach wear. 
    Click on the submit button at the bottom right.
    Wait for 100 seconds for the image to be generated.
-   In the text box, enter the prompt: Change to a frontal view, looking at the viewer, facing the camera, full length shot.., sitting with legs wide open in a yoga pose on a beach towel, wearing the same beach wear. 
+   
+   Use the `get_page_content` tool to find the main text input area.
+   Use the `paste` tool to Paste image from the clipboard into that text area
+
+   In the text box, enter the prompt: Change to a frontal view, looking at the viewer, facing the camera, close-up  shot.., in a lush green park. Change attire to casual jeans and a t-shirt. Change pose to sitting on a park bench. 
    Click on the submit button at the bottom right.
    Wait for 100 seconds for the image to be generated.
-   In the text box, enter the prompt: Change to a frontal view, looking at the viewer, facing the camera, full length shot.., in a lush green park. Change attire to casual jeans and a t-shirt. Change pose to sitting on a park bench. 
-   Click on the submit button at the bottom right.
-   Wait for 100 seconds for the image to be generated.
-   In the text box, enter the prompt: Change to a frontal view, looking at the viewer, facing the camera,  full length shot.., in a park, doing a yoga tree pose, wearing athletic wear. 
+   In the text box, enter the prompt: Change to a frontal view, looking at the viewer, facing the camera,  close-up shot.., in a park, doing a yoga tree pose, wearing athletic wear. 
    Click on the submit button at the bottom right.
    Wait for 100 seconds for the image to be generated.
 
    Use the `get_page_content` tool to find the main text input area.
-   Paste the image from the clipboard into that text area
+   Use the `paste` tool to Paste image from the clipboard into that text area
+
+   In the text box, enter the prompt: Change to a headshot showing a full laugh with a head tilted slightly. 
+   Click on the submit button at the bottom right.
+   Wait for 100 seconds for the image to be generated.
    In the text box, enter the prompt: Change to a waist-level shot, wearing a stylish evening gown, standing on a balcony at night with city lights in the background. 
    Click on the submit button at the bottom right.
    Wait for 100 seconds for the image to be generated.
+
+   Use the `get_page_content` tool to find the main text input area.
+   Use the `paste` tool to Paste image from the clipboard into that text area
+
    In the text box, enter the prompt: Change to a close-up side profile, wearing traditional jewelry, in a temple with ornate carvings. 
    Click on the submit button at the bottom right.
    Wait for 100 seconds for the image to be generated.
+
    Use the `get_page_content` tool to find the main text input area.
-   Paste the image from the clipboard into that text area
+   Use the `paste` tool to Paste image from the clipboard into that text area
+
    In the text box, enter the prompt: Change to a frontal view, looking at the viewer, facing the camera, full-length back profile, walking away on a cobblestone street in a winter coat. 
    Click on the submit button at the bottom right.
+   Wait for 100 seconds for the image to be generated.
+
    Use the `get_page_content` tool to find the main text input area.
-   Paste the image from the clipboard into that text area
+   Use the `paste` tool to Paste image from the clipboard into that text area
+
    In the text box, enter the prompt: Change to a waist-level shot, in a coffee house. Change attire to a modern business suit. Change pose to sitting at a table with a laptop. 
    Click on the submit button at the bottom right.
    Wait for 100 seconds for the image to be generated.
    In the text box, enter the prompt: Change to a knee-level shot, in an office, wearing professional business attire. Change pose to standing confidently. 
    Click on the submit button at the bottom right.
    Wait for 100 seconds for the image to be generated.
+
+   Use the `get_page_content` tool to find the main text input area.
+   Use the `paste` tool to Paste image from the clipboard into that text area
+
    In the text box, enter the prompt: "Change to a close up shot, full length shot. Keep everything else the same. "
    Click on the submit button at the bottom right.
    Wait for 100 seconds for the image to be generated.
@@ -50,8 +69,10 @@ prompt: |
    In the text box, enter the prompt: Change to a headshot with a sad and thoughtful look. 
    Click on the submit button at the bottom right.
    Wait for 100 seconds for the image to be generated.
+
    Use the `get_page_content` tool to find the main text input area.
-   Paste the image from the clipboard into that text area
+   Use the `paste` tool to Paste image from the clipboard into that text area
+
    In the text box, enter the prompt: Change to a frontal view, looking at the viewer, facing the camera, close up shot, close up shot, full length shot.., in a park, running with a joyful expression, wearing athletic wear. 
    Click on the submit button at the bottom right.
    Wait for 100 seconds for the image to be generated.
@@ -64,6 +85,10 @@ prompt: |
    In the text box, enter the prompt: Change to a waist-level shot, in a living room, wearing comfortable clothes. Change pose to sitting on a sofa. 
    Click on the submit button at the bottom right.
    Wait for 100 seconds for the image to be generated.
+
+   Use the `get_page_content` tool to find the main text input area.
+   Use the `paste` tool to Paste image from the clipboard into that text area
+
    In the text box, enter the prompt: Change to a frontal view, looking at the viewer, facing the camera, close up shot, close up shot, full length shot.., in a home setting, with an annoyed expression. Change pose to standing by the kitchen counter. 
    Click on the submit button at the bottom right.
    Wait for 100 seconds for the image to be generated.
