@@ -236,40 +236,21 @@ class PlaywrightAdapter(BrowserAdapter):
         except Exception as e:
             logger.error(f"Failed to get post details for '{post_selector}': {e}")
             return {"author": "Error", "text": str(e), "likes": "Error"}
-    async def paste_image(self, selector: str, image_bytes: bytes) -> str:
+    async def paste_image(self, selector: str) -> str:
         """
-        Pastes an image from a byte string into a specified element.
-        This works by writing to the browser's in-page clipboard.
+        Pastes an image from the system clipboard into a specified element.
+        This works by simulating a paste keyboard shortcut.
         """
         await self.connect()
-        logger.info(f"[BROWSER] Pasting image into '{selector}'")
+        logger.info(f"[BROWSER] Pasting image from clipboard into '{selector}'")
         
         try:
             await self._page.focus(selector)
-            # Convert the byte string to a base64 string
-            image_base64 = base64.b64encode(image_bytes).decode('utf-8')
-            
-            # This JavaScript code will:
-            # 1. Fetch the image data from the base64 string
-            # 2. Create a Blob object
-            # 3. Create a ClipboardItem with the image data
-            # 4. Write the ClipboardItem to the browser's clipboard
-            js_code = """
-                async (args) => {
-                    const response = await fetch(`data:image/jpeg;base64,${args.image_base64}`);
-                    const blob = await response.blob();
-                    await navigator.clipboard.write([
-                        new ClipboardItem({ 'image/jpeg': blob })
-                    ]);
-                }
-            """
-            await self._page.evaluate(js_code, {"image_base64": image_base64})
-
-            # Press Ctrl/Cmd + V to paste
             modifier = "Meta" if platform.system() == "Darwin" else "Control"
             await self._page.keyboard.press(f"{modifier}+V")
             
             return f"Pasted image into {selector}"
+
         except Exception as e:
             logger.error(f"Failed to paste image: {e}")
             return f"Error: Failed to paste image. {e}"

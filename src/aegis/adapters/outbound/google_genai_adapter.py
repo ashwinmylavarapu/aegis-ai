@@ -78,8 +78,8 @@ class GoogleGenAIAdapter(LLMAdapter):
             ),         
             FunctionDeclaration(
                 name="paste_image",
-                description="Pastes an image from the clipboard into a specified element.",
-                parameters={"type": "object", "properties": {"selector": {"type": "string"}, "image_bytes": {"type": "string"}}, "required": ["selector", "image_bytes"]},
+                description="Pastes an image from the clipboard into a specified element. Requires an image to be on the system clipboard.",
+                parameters={"type": "object", "properties": {"selector": {"type": "string"}}, "required": ["selector"]},
             ),
         ]
         
