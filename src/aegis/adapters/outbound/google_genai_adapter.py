@@ -64,7 +64,7 @@ class GoogleGenAIAdapter(LLMAdapter):
             FunctionDeclaration(name="scroll", description="Scrolls the page down.", parameters={"type": "object", "properties": {"direction": {"type": "string", "enum": ["down"]}}, "required": ["direction"]}),
             FunctionDeclaration(name="click", description="Clicks an element.", parameters={"type": "object", "properties": {"selector": {"type": "string"}}, "required": ["selector"]}),
             FunctionDeclaration(name="find_element", description="Finds a single element.", parameters={"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}),
-            FunctionDeclaration(name="paste", description="Pastes text into an element.", parameters={"type": "object", "properties": {"selector": {"type": "string"}, "text": {"type": "string"}}, "required": ["selector", "text"]}),
+            #FunctionDeclaration(name="paste", description="Pastes text into an element.", parameters={"type": "object", "properties": {"selector": {"type": "string"}, "text": {"type": "string"}}, "required": ["selector", "text"]}),
             FunctionDeclaration(name="finish_task", description="Call when the goal is accomplished.", parameters={"type": "object", "properties": {"summary": {"type": "string"}}, "required": ["summary"]}),
             FunctionDeclaration(
                 name="wait",
@@ -81,7 +81,13 @@ class GoogleGenAIAdapter(LLMAdapter):
                 description="Pastes an image from the clipboard into a specified element. Requires an image to be on the system clipboard.",
                 parameters={"type": "object", "properties": {"selector": {"type": "string"}}, "required": ["selector"]},
             ),
+            FunctionDeclaration(
+                name="type_text",
+                description="Types text into an element.",
+                parameters={"type": "object", "properties": {"selector": {"type": "string"}, "text": {"type": "string"}}, "required": ["selector", "text"]},
+            ),       
         ]
+
         
         self.system_instruction = (
             "You are a web automation robot. Your only purpose is to execute the user's numbered plan. You must follow the rules absolutely:\n"
