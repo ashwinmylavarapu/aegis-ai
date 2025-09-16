@@ -181,3 +181,8 @@ class PlaywrightAdapter(BrowserAdapter):
         except Exception as e:
             logger.error(f"Could not get HTML for selector '{selector}': {e}")
             return f"Error: Could not get HTML. {e}"
+    async def wait(self, seconds: int) -> str:
+        """Pauses execution for a specified number of seconds."""
+        logger.info(f"Waiting for {seconds} second(s)...")
+        await asyncio.sleep(seconds)
+        return f"Successfully waited for {seconds} second(s)."

@@ -66,6 +66,11 @@ class GoogleGenAIAdapter(LLMAdapter):
             FunctionDeclaration(name="find_element", description="Finds a single element.", parameters={"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}),
             FunctionDeclaration(name="paste", description="Pastes text into an element.", parameters={"type": "object", "properties": {"selector": {"type": "string"}, "text": {"type": "string"}}, "required": ["selector", "text"]}),
             FunctionDeclaration(name="finish_task", description="Call when the goal is accomplished.", parameters={"type": "object", "properties": {"summary": {"type": "string"}}, "required": ["summary"]}),
+            FunctionDeclaration(
+                name="wait",
+                description="Pauses execution for a specified number of seconds to allow content to load.",
+                parameters={"type": "object", "properties": {"seconds": {"type": "integer"}}, "required": ["seconds"]},
+            ),            
         ]
         
         self.system_instruction = (
