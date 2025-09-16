@@ -3,7 +3,8 @@ description: "Generate an image of a character, then a character sheet for them.
 goal_type: natural_language
 prompt: |
   1. Navigate to https://gemini.google.com/u/2/app
-  2. Use the `type_text` tool with the selector `div.ql-editor[role="textbox"]` to enter the following prompt: "Generate an image of a south Indian woman mid 20s. Stunning beauty with traditional beauty wearing kurta. Close up portrait shot with subject smiling. A frontal view profile."
-  3. Click the send message button using the selector `button[aria-label="Send message"]`.
-  4. Wait for 20 seconds for the image to be generated.
-  5. The final action to perform is to `finish_task` with a summary of the outcome.
+  2. Use the `paste_image` tool to paste an image into the text input area. The selector is `div.ql-editor[role="textbox"]`. The image data is the following base64-encoded byte string: b'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+  3. Use the `type_text` tool with the same selector `div.ql-editor[role="textbox"]` to enter the following prompt: "Change background to a park"
+  4. Click the send message button using the selector `button[aria-label="Send message"]`.
+  5. Wait for 20 seconds for the image to be generated.
+  6. The final action to perform is to `finish_task` with a summary of the outcome.
