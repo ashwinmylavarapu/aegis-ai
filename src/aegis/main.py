@@ -8,15 +8,41 @@ import json
 from aegis.core.orchestrator import Orchestrator
 from aegis.core.models import Goal
 
-def setup_logging(level="INFO"):
-    logger.remove()
-    # Using click.echo to ensure logs are visible with the `tee` command
-    logger.add(lambda msg: click.echo(msg, err=True), level=level, format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} - {message}")
+def setup_logging(config: dict):
+    """
+    Sets up a two-tiered logging system based on the config.
+    - SUCCESS level logs are for high-level milestones and are formatted cleanly.
+    - Other logs (INFO, DEBUG, etc.) are for detailed tracking.
+    """
+    log_config = config.get("logging", {})
+    log_level = log_config.get("level", "INFO").upper()
+
+    logger.remove() # Remove the default handler
+
+    # Add a handler specifically for SUCCESS milestones
+    # This will always print, unless the log_level is WARNING or ERROR
+    logger.add(
+        lambda msg: click.echo(msg, err=True),
+        level="SUCCESS",
+        format="<green>✅ SUCCESS:</green> <bold>{message}</bold>",
+        colorize=True
+    )
+
+    # Add a handler for all other levels, controlled by the config file
+    logger.add(
+        lambda msg: click.echo(msg, err=True),
+        level=log_level,
+        format="<level>{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} - {message}</level>",
+        colorize=True,
+        # Filter out SUCCESS messages so they aren't printed twice
+        filter=lambda record: record["level"].name != "SUCCESS"
+    )
+    logger.info(f"Logging initialized at level: {log_level}")
+
 
 def load_config(config_path: str) -> dict:
     """Loads a YAML configuration file and expands environment variables."""
     with open(config_path, 'r') as f:
-        # Expand environment variables like ${VAR_NAME}
         config_str = os.path.expandvars(f.read())
         return yaml.safe_load(config_str)
 
@@ -34,14 +60,16 @@ def cli():
 @cli.command()
 @click.argument('goal_file', type=click.Path(exists=True))
 @click.option('--config', 'config_file', default='config.yaml', help='Path to the configuration file.')
-@click.option('--log-level', default='INFO', help='Set the logging level (e.g., DEBUG, INFO, WARNING).')
-def run(goal_file, config_file, log_level):
+def run(goal_file, config_file):
     """Run a goal from a YAML file."""
-    setup_logging(level=log_level.upper())
-    logger.info(f"Aegis framework starting to run goal from: {goal_file}")
-
+    # --- THIS IS THE FIX ---
+    # Load config FIRST, then set up logging.
     try:
         config = load_config(config_file)
+        setup_logging(config)
+        
+        logger.info(f"Aegis framework starting to run goal from: {goal_file}")
+        
         goal = load_goal(goal_file)
 
         orchestrator = Orchestrator(config=config)
@@ -58,13 +86,13 @@ def run(goal_file, config_file, log_level):
                 for call in tool_calls:
                     if call.get('tool_name') == 'finish_task':
                         summary = call.get('tool_args', {}).get('summary', 'No summary provided.')
-                        logger.success(f"Final Outcome: {summary}")
+                        logger.success(f"Final Outcome: {summary}") # Use SUCCESS for the final outcome
                         # Pretty print the summary if it's a JSON string
                         try:
                             parsed_summary = json.loads(summary)
                             pretty_summary = json.dumps(parsed_summary, indent=2)
                             click.echo(pretty_summary)
-                        except json.JSONDecodeError:
+                        except (json.JSONDecodeError, TypeError):
                             pass # It's just a regular string
                         break
                 else:
@@ -80,7 +108,6 @@ def run(goal_file, config_file, log_level):
 
     except Exception as e:
         logger.error(f"An unrecoverable error occurred during execution: {e}")
-        # Re-raise to ensure the script exits with a non-zero code and shows the full stack trace
         raise
 
 if __name__ == "__main__":

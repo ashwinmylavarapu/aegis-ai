@@ -3,13 +3,11 @@ description: "Find recent posts from Aakash Gupta using a two-phase collect-then
 goal_type: natural_language
 prompt: |
   # PHASE 1: DATA COLLECTION
-  1. Navigate to www.linkedin.com.
-  2. Scroll down 5 times to load initial content.
-  3. Find the "show more feed updates" button and click it 5 times, scrolling 3 times after each click.
-  4. Use the `find_elements` tool to get a list of unique selectors for up to 50 post containers (selector: 'div.feed-shared-update-v2').
+  1. Navigate to https://www.linkedin.com/in/aagupta/recent-activity/all/
+  2. Scroll down 2 times to load initial content.
 
   # PHASE 2: ITERATION & FINAL ANALYSIS
-  5. **CRITICAL**: Now, for each of the 50 post selectors you found in the previous step, execute the `get_post_details` tool one time.
-  6. After you have called `get_post_details` for all 50 posts, you MUST stop calling tools.
-  7. Your final step is to review the entire history of extracted details from all the posts. Analyze this complete dataset to find any posts where the author is "Aakash Gupta".
+  5. **CRITICAL**: Now, for each of the post selectors you found in the previous step, execute the `get_post_details` tool one time.
+  6. After you have called `get_post_details` for all posts, you MUST stop calling tools.
+  7. Your final step is to review the entire history of extracted details from all the posts.
   8. Call `finish_task` with a JSON summary of the posts you found. If none were found, state that in the final summary.

@@ -100,6 +100,19 @@ class PlaywrightAdapter(BrowserAdapter):
         await self._page.fill(selector, text)
         return f"Successfully typed text into '{selector}'"
 
+    # --- THIS IS THE FIX ---
+    # Re-instating the 'paste' method that was unintentionally removed.
+    async def paste(self, selector: str, text: str) -> str:
+        await self.connect()
+        modifier = "Meta" if platform.system() == "Darwin" else "Control"
+        logger.info(f"[BROWSER] Pasting text into '{selector}'")
+        await self._page.focus(selector)
+        # Note: Playwright's keyboard.press doesn't accept a 'text' argument directly.
+        # We can use the clipboard API for a more robust paste.
+        await self._page.evaluate("navigator.clipboard.writeText(arguments[0])", text)
+        await self._page.keyboard.press(f"{modifier}+KeyV")
+        return f"Pasted text into {selector}"
+
     async def click(self, selector: str) -> str:
         await self.connect()
         logger.info(f"[BROWSER] Clicking '{selector}'")
@@ -166,25 +179,18 @@ class PlaywrightAdapter(BrowserAdapter):
         logger.success(f"Found {len(unique_selectors)} elements.")
         return unique_selectors
 
-    # --- THIS IS THE FINAL FIX ---
-    # Upgrading the selectors to be more specific and resilient to ambiguity.
     async def get_post_details(self, post_selector: str) -> Dict[str, str]:
-        """A specialized tool to reliably extract author and text from a single LinkedIn post."""
+        """A specialized tool to reliably extract author and text from a single MAIN FEED post."""
         await self.connect()
-        logger.info(f"[BROWSER] Getting details for post: '{post_selector}'")
+        logger.info(f"[BROWSER] Getting MAIN FEED details for post: '{post_selector}'")
         
-        # A more specific selector for the post text that avoids translated versions.
-        text_selector = "div.update-components-text.relative.update-components-update-v2__commentary"
-        # The selector for the author's name remains reliable.
         author_selector = "span.update-components-actor__name > span[aria-hidden='true']"
+        text_selector = "div.update-components-text.relative.update-components-update-v2__commentary"
         
         try:
             post_element = self._page.locator(post_selector)
-            
-            # Use .first to ensure we only ever get one element, preventing strict mode violations.
             author_element = post_element.locator(author_selector).first
             author_name = await author_element.inner_text(timeout=2000) if await author_element.count() > 0 else "Unknown"
-            
             text_element = post_element.locator(text_selector).first
             post_text = await text_element.inner_text(timeout=2000) if await text_element.count() > 0 else ""
             
@@ -192,4 +198,25 @@ class PlaywrightAdapter(BrowserAdapter):
             return {"author": author_name, "text": post_text.strip()}
         except Exception as e:
             logger.warning(f"Could not extract details for post '{post_selector}': {e}")
+            return {"author": "Error", "text": str(e)}
+
+    async def get_activity_post_details(self, post_selector: str) -> Dict[str, str]:
+        """A specialized tool to reliably extract author and text from a single ACTIVITY FEED post."""
+        await self.connect()
+        logger.info(f"[BROWSER] Getting ACTIVITY details for post: '{post_selector}'")
+        
+        author_selector = "div.feed-shared-actor__meta a[href*='/in/']"
+        text_selector = "div.update-components-text"
+        
+        try:
+            post_element = self._page.locator(post_selector)
+            author_element = post_element.locator(author_selector).first
+            author_name = await author_element.inner_text(timeout=2000) if await author_element.count() > 0 else "Unknown"
+            text_element = post_element.locator(text_selector).first
+            post_text = await text_element.inner_text(timeout=2000) if await text_element.count() > 0 else ""
+            
+            logger.success(f"Extracted activity post by '{author_name}'")
+            return {"author": author_name, "text": post_text.strip()}
+        except Exception as e:
+            logger.warning(f"Could not extract activity details for post '{post_selector}': {e}")
             return {"author": "Error", "text": str(e)}

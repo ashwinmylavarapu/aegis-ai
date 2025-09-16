@@ -9,6 +9,8 @@ from ..adapters.outbound.browser_adapter_factory import get_browser_adapter
 from ..adapters.outbound.llm_adapter_factory import get_llm_adapter
 from ..adapters.outbound.opa_client_factory import get_opa_client
 from aegis.skills.linkedin import linkedin_login
+from aegis.skills.batch_processing import process_posts_in_batches
+from aegis.skills.activity_processing import process_activity_posts_in_batches
 
 class AgentState(TypedDict):
     goal: Goal
@@ -45,10 +47,10 @@ async def tool_step(state: AgentState, config: RunnableConfig) -> Dict[str, Any]
         tool_name = call.get("tool_name")
         tool_args = call.get("tool_args", {})
         
-        logger.info(f"Executing tool: '{tool_name}' with args: {tool_args}")
+        logger.success(f"Executing tool: '{tool_name}' with args: {tool_args}")
         
         output = await orchestrator_instance.execute_tool(tool_name, tool_args)
-        tool_outputs.append({"tool_name": tool_name, "tool_output": str(output)})
+        tool_outputs.append({"tool_name": tool_name, "tool_output": output})
 
     tool_turn = {"type": "tool", "content": tool_outputs}
     return {"history": [tool_turn], "steps_taken": state["steps_taken"] + 1}
@@ -74,6 +76,8 @@ class Orchestrator:
         self.opa_client = get_opa_client(config)
         self.skills = {
             "linkedin_login": linkedin_login,
+            "process_posts_in_batches": process_posts_in_batches,
+            "process_activity_posts_in_batches": process_activity_posts_in_batches,
         }
         self.workflow = self._build_graph()
 
@@ -122,9 +126,6 @@ class Orchestrator:
         runnable_config = {"configurable": {"orchestrator_instance": self, **self.config}, "recursion_limit": max_steps}
         
         final_state = None
-        # --- THIS IS THE FIX ---
-        # The final output of the graph is the last event streamed.
-        # We capture every event, and the last one will be our final state.
         async for event in self.workflow.astream(initial_state, runnable_config):
             if "agent" in event:
                 final_state = event["agent"]

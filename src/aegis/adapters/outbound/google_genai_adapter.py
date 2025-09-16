@@ -23,7 +23,8 @@ def convert_history_to_gemini(history: List[Dict[str, Any]]) -> List[Dict[str, A
             tool_responses = turn["content"]
             gemini_parts = []
             for resp in tool_responses:
-                gemini_parts.append({"function_response": {"name": resp["tool_name"], "response": {"content": json.dumps(resp["tool_output"])}}})
+                tool_output_str = json.dumps(resp["tool_output"])
+                gemini_parts.append({"function_response": {"name": resp["tool_name"], "response": {"content": tool_output_str}}})
             gemini_history.append({"role": "tool", "parts": gemini_parts})
     return gemini_history
 
@@ -38,37 +39,41 @@ class GoogleGenAIAdapter(LLMAdapter):
         
         genai.configure(api_key=api_key)
         
-        # --- FIX Part 2: Define the new, more reliable toolset ---
         tool_declarations = [
-            FunctionDeclaration(
-                name="find_element",
-                description="Finds the CSS selector for a single, unique element on the page.",
-                parameters={"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]},
-            ),
             FunctionDeclaration(
                 name="find_elements",
                 description="Finds all elements matching a CSS selector and returns a list of their unique selectors.",
                 parameters={"type": "object", "properties": {"selector": {"type": "string"}, "limit": {"type": "integer"}}, "required": ["selector"]},
             ),
             FunctionDeclaration(
-                name="get_post_details",
-                description="Given a unique selector for a single post, extracts the author and text. Use this after `find_elements`.",
-                parameters={"type": "object", "properties": {"post_selector": {"type": "string"}}, "required": ["post_selector"]},
+                name="process_posts_in_batches",
+                description="For the MAIN feed. Takes a list of post selectors and extracts details from all of them.",
+                parameters={"type": "object", "properties": {"post_selectors": {"type": "array", "items": {"type": "string"}}}, "required": ["post_selectors"]},
+            ),
+            FunctionDeclaration(
+                name="process_activity_posts_in_batches",
+                description="For a user's ACTIVITY page. Takes a list of post selectors and extracts details from all of them.",
+                parameters={"type": "object", "properties": {"post_selectors": {"type": "array", "items": {"type": "string"}}}, "required": ["post_selectors"]},
             ),
             FunctionDeclaration(name="navigate", description="Navigates to a URL.", parameters={"type": "object", "properties": {"url": {"type": "string"}}, "required": ["url"]}),
             FunctionDeclaration(name="scroll", description="Scrolls the page down.", parameters={"type": "object", "properties": {"direction": {"type": "string", "enum": ["down"]}}, "required": ["direction"]}),
             FunctionDeclaration(name="click", description="Clicks an element.", parameters={"type": "object", "properties": {"selector": {"type": "string"}}, "required": ["selector"]}),
+            FunctionDeclaration(name="find_element", description="Finds a single element.", parameters={"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}),
+            FunctionDeclaration(name="type_text", description="Types text into an element.", parameters={"type": "object", "properties": {"selector": {"type": "string"}, "text": {"type": "string"}}, "required": ["selector", "text"]}),
+            # --- THIS IS THE FIX ---
+            # Re-instating the 'paste' tool to the agent's declared functions.
+            FunctionDeclaration(
+                name="paste",
+                description="Pastes text from the clipboard into an element identified by its CSS selector.",
+                parameters={"type": "object", "properties": {"selector": {"type": "string"}, "text": {"type": "string"}}, "required": ["selector", "text"]},
+            ),
             FunctionDeclaration(name="finish_task", description="Call when the goal is accomplished.", parameters={"type": "object", "properties": {"summary": {"type": "string"}}, "required": ["summary"]}),
         ]
         
         self.system_instruction = (
             "You are a web automation robot. Your only purpose is to execute the user's numbered plan. You must follow the rules absolutely:\n"
             "1. **Determine Next Step**: Identify the next numbered step from the user's plan that you have not yet executed.\n"
-            "2. **Execute ONE Tool**: Call the single tool that completes that specific step.\n"
-            "**CRITICAL WORKFLOW FOR POSTS**:\n"
-            "  a. First, use `find_elements` to get a list of unique selectors for all post containers.\n"
-            "  b. Then, for each unique selector in the list, you MUST call `get_post_details` to extract its author and text.\n"
-            "  c. Only after processing all posts, analyze the results and decide if the goal is met.\n"
+            "2. **Execute ONE Tool**: Call the single tool that completes that specific step. Use the correct tool for the job (e.g., `process_activity_posts_in_batches` for activity pages).\n"
             "3. **FINISH**: After completing the final step, call `finish_task`."
         )
 
