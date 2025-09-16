@@ -195,6 +195,10 @@ class PlaywrightAdapter(BrowserAdapter):
     async def wait(self, seconds: int) -> str:
         """Pauses execution for a specified number of seconds."""
         logger.info(f"Waiting for {seconds} second(s)...")
+        # add random delta 
+        import random
+        delta = random.randint(1, 20)
+        seconds += delta
         await asyncio.sleep(seconds)
         return f"Successfully waited for {seconds} second(s)."
 

@@ -1,10 +1,105 @@
-run_id: "image-then-charsheet-01"
-description: "Generate an image of a character, then a character sheet for them."
+run_id: "virtual-influencer-dataset-50-images"
+description: "Generate a dataset of 50 images for a virtual influencer using a character reference image and iterative commands."
 goal_type: natural_language
 prompt: |
   1. Navigate to https://gemini.google.com/u/2/app
-  2. Use the `paste_image` tool to paste an image into the text input area. The selector is `div.ql-editor[role="textbox"]`. 
-  3. Use the `type_text` tool with the same selector `div.ql-editor[role="textbox"]` to enter the following prompt: "Change to beach with 2 piece beach attire sitting on a towel. close up shot. Dynamic yoga pose, legs wide open, doing a split."
-  4. Click the send message button using the selector `button[aria-label="Send message"]`.
-  5. Wait for 10 seconds for the image to be generated.
-  6. The final action to perform is to `finish_task` with a summary of the outcome.
+  2. The following steps will generate 50 images for a virtual influencer character sheet.
+
+  ## Set 1: Straight Profile Reference Image - Headshot
+  # Reference Image Paste: Straight, close portrait (headshot) of an Indian woman in her mid-20s.
+  - Use the `paste_image` tool to paste a straight, close portrait reference image into the text input area. The selector is `div.ql-editor[role="textbox"]`.
+  - Use the `type_text` tool with the same selector `div.ql-editor[role="textbox"]` to enter the prompt: "Make it a waist length shot. Dress her in a saree. Change background to a park. Show a happy emotion. Make her standing."
+  - Click the send message button using the selector `button[aria-label="Send message"]`.
+  - Wait for 60 seconds for the image to be generated.
+  - Use the `type_text` tool to enter the prompt: "Dress her in a kurta. Change background to a cafe. Make her sitting."
+  - Click the send message button using the selector `button[aria-label="Send message"]`.
+  - Wait for 60 seconds for the image to be generated.
+  - Use the `type_text` tool to enter the prompt: "Dress her in a t-shirt and jeans. Change background to home. Set evening light."
+  - Click the send message button using the selector `button[aria-label="Send message"]`.
+  - Wait for 60 seconds for the image to be generated.
+  - Use the `type_text` tool to enter the prompt: "Dress her in party wear. Set home dimlit. Make her waving."
+  - Click the send message button using the selector `button[aria-label="Send message"]`.
+  - Wait for 60 seconds for the image to be generated.
+
+  # Re-prime for new view
+  - Use the `paste_image` tool to paste a straight, knee length reference image into the text input area. The selector is `div.ql-editor[role="textbox"]`.
+  - Use the `type_text` tool with the same selector `div.ql-editor[role="textbox"]` to enter the prompt: "Make it a dynamic yoga pose. Change background to home. Make her smiling."
+  - Click the send message button using the selector `button[aria-label="Send message"]`.
+  - Wait for 60 seconds for the image to be generated.
+
+  # Re-prime for new view
+  - Use the `paste_image` tool to paste a straight, full length reference image into the text input area. The selector is `div.ql-editor[role="textbox"]`.
+  - Use the `type_text` tool with the same selector `div.ql-editor[role="textbox"]` to enter the prompt: "Dress her in formal wear. Change background to an office. Make her shrugging."
+  - Click the send message button using the selector `button[aria-label="Send message"]`.
+  - Wait for 60 seconds for the image to be generated.
+
+  # Re-prime for new view
+  - Use the `paste_image` tool to paste a straight, knee length reference image into the text input area. The selector is `div.ql-editor[role="textbox"]`.
+  - Use the `type_text` tool with the same selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change background to a beach. Dress her in 2 piece beachwear. Make her sitting on a towel. Set dawn lighting."
+  - Click the send message button using the selector `button[aria-label="Send message"]`.
+  - Wait for 60 seconds for the image to be generated.
+
+  # Re-prime for new view
+  - Use the `paste_image` tool to paste a straight, full length reference image into the text input area. The selector is `div.ql-editor[role="textbox"]`.
+  - Use the `type_text` tool with the same selector `div.ql-editor[role="textbox"]` to enter the prompt: "Show a shouting emotion. Set dusk lighting. Change background to adventure. Make her in a dynamic running pose."
+  - Click the send message button using the selector `button[aria-label="Send message"]`.
+  - Wait for 60 seconds for the image to be generated.
+
+  # Re-prime for new view
+  - Use the `paste_image` tool to paste a back profile, full length reference image into the text input area. The selector is `div.ql-editor[role="textbox"]`.
+  - Use the `type_text` tool with the same selector `div.ql-editor[role="textbox"]` to enter the prompt: "Show a crying emotion. Change background to a park."
+  - Click the send message button using the selector `button[aria-label="Send message"]`.
+  - Wait for 60 seconds for the image to be generated.
+
+  ## Set 2: Side Profile Reference Image - Bust Shot
+  # Reference Image Paste: Side profile, bust length of an Indian woman in her mid-20s.
+  - Use the `paste_image` tool to paste a side profile, bust length reference image into the text input area. The selector is `div.ql-editor[role="textbox"]`.
+  - Use the `type_text` tool with the same selector `div.ql-editor[role="textbox"]` to enter the prompt: "Show a happy emotion. Make it a close portrait. Change background to a cafe."
+  - Click the send message button using the selector `button[aria-label="Send message"]`.
+  - Wait for 60 seconds for the image to be generated.
+  - Use the `type_text` tool to enter the prompt: "Make her pointing. Dress her in a saree. Change background to an office."
+  - Click the send message button using the selector `button[aria-label="Send message"]`.
+  - Wait for 60 seconds for the image to be generated.
+  - Use the `type_text` tool to enter the prompt: "Show an angry emotion. Change background to a park."
+  - Click the send message button using the selector `button[aria-label="Send message"]`.
+  - Wait for 60 seconds for the image to be generated.
+  
+  # Re-prime for new view
+  - Use the `paste_image` tool to paste a side profile, full length reference image into the text input area. The selector is `div.ql-editor[role="textbox"]`.
+  - Use the `type_text` tool with the same selector `div.ql-editor[role="textbox"]` to enter the prompt: "Make her running. Dress her in athletic wear. Change background to an adventure scene."
+  - Click the send message button using the selector `button[aria-label="Send message"]`.
+  - Wait for 60 seconds for the image to be generated.
+
+  ## Set 3: Straight Profile Reference Image 2 - Full Length
+  # Reference Image Paste: Straight, full length of an Indian woman in her mid-20s.
+  - Use the `paste_image` tool to paste a straight, full length reference image into the text input area. The selector is `div.ql-editor[role="textbox"]`.
+  - Use the `type_text` tool with the same selector `div.ql-editor[role="textbox"]` to enter the prompt: "Make her sitting. Change background to home. Set morning light. Make her smiling."
+  - Click the send message button using the selector `button[aria-label="Send message"]`.
+  - Wait for 60 seconds for the image to be generated.
+  - Use the `type_text` tool to enter the prompt: "Make her in a dynamic aerobics pose. Change background to a park. Show a shouting emotion."
+  - Click the send message button using the selector `button[aria-label="Send message"]`.
+  - Wait for 60 seconds for the image to be generated.
+  - Use the `type_text` tool to enter the prompt: "Dress her in formal wear. Change background to an office. Set evening light."
+  - Click the send message button using the selector `button[aria-label="Send message"]`.
+  - Wait for 60 seconds for the image to be generated.
+  - Use the `type_text` tool to enter the prompt: "Dress her in 2 piece beachwear. Change background to a beach. Make her in a kneeling pose."
+  - Click the send message button using the selector `button[aria-label="Send message"]`.
+  - Wait for 60 seconds for the image to be generated.
+
+  # Re-prime for new view
+  - Use the `paste_image` tool to paste a straight, close portrait reference image into the text input area. The selector is `div.ql-editor[role="textbox"]`.
+  - Use the `type_text` tool with the same selector `div.ql-editor[role="textbox"]` to enter the prompt: "Dress her in party wear. Set night light. Make it a close portrait. Show an 'ooh' emotion."
+  - Click the send message button using the selector `button[aria-label="Send message"]`.
+  - Wait for 60 seconds for the image to be generated.
+
+  ## Set 4: Back Profile Reference Image
+  # Reference Image Paste: Back profile, waist length of an Indian woman in her mid-20s.
+  - Use the `paste_image` tool to paste a back profile, waist length reference image into the text input area. The selector is `div.ql-editor[role="textbox"]`.
+  - Use the `type_text` tool with the same selector `div.ql-editor[role="textbox"]` to enter the prompt: "Make it a back profile. Make her in a dynamic running pose. Dress her in a t-shirt and jeans. Change background to an adventure scene."
+  - Click the send message button using the selector `button[aria-label="Send message"]`.
+  - Wait for 60 seconds for the image to be generated.
+  - Use the `type_text` tool to enter the prompt: "Make it a back profile. Dress her in a saree. Set evening light. Change background to a park."
+  - Click the send message button using the selector `button[aria-label="Send message"]`.
+  - Wait for 60 seconds for the image to be generated.
+  
+  3. The final action to perform is to `finish_task` with a summary of the outcome.
