@@ -41,6 +41,11 @@ class GoogleGenAIAdapter(LLMAdapter):
         
         tool_declarations = [
             FunctionDeclaration(
+                name="get_page_html",
+                description="A debugging tool that gets the full inner HTML of a single element, specified by a CSS selector.",
+                parameters={"type": "object", "properties": {"selector": {"type": "string"}}, "required": ["selector"]},
+            ),
+            FunctionDeclaration(
                 name="find_elements",
                 description="Finds all elements matching a CSS selector and returns a list of their unique selectors.",
                 parameters={"type": "object", "properties": {"selector": {"type": "string"}, "limit": {"type": "integer"}}, "required": ["selector"]},
@@ -59,14 +64,7 @@ class GoogleGenAIAdapter(LLMAdapter):
             FunctionDeclaration(name="scroll", description="Scrolls the page down.", parameters={"type": "object", "properties": {"direction": {"type": "string", "enum": ["down"]}}, "required": ["direction"]}),
             FunctionDeclaration(name="click", description="Clicks an element.", parameters={"type": "object", "properties": {"selector": {"type": "string"}}, "required": ["selector"]}),
             FunctionDeclaration(name="find_element", description="Finds a single element.", parameters={"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}),
-            FunctionDeclaration(name="type_text", description="Types text into an element.", parameters={"type": "object", "properties": {"selector": {"type": "string"}, "text": {"type": "string"}}, "required": ["selector", "text"]}),
-            # --- THIS IS THE FIX ---
-            # Re-instating the 'paste' tool to the agent's declared functions.
-            FunctionDeclaration(
-                name="paste",
-                description="Pastes text from the clipboard into an element identified by its CSS selector.",
-                parameters={"type": "object", "properties": {"selector": {"type": "string"}, "text": {"type": "string"}}, "required": ["selector", "text"]},
-            ),
+            FunctionDeclaration(name="paste", description="Pastes text into an element.", parameters={"type": "object", "properties": {"selector": {"type": "string"}, "text": {"type": "string"}}, "required": ["selector", "text"]}),
             FunctionDeclaration(name="finish_task", description="Call when the goal is accomplished.", parameters={"type": "object", "properties": {"summary": {"type": "string"}}, "required": ["summary"]}),
         ]
         
