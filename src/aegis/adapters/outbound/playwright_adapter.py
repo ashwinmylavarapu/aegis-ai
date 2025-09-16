@@ -162,12 +162,20 @@ class PlaywrightAdapter(BrowserAdapter):
         return f"Scrolled {direction}"
 
     async def paste(self, selector: str, text: str) -> str:
+        """Pastes text into an element."""
         await self.connect()
         logger.info(f"[BROWSER] Pasting clipboard content into '{selector}'")
         await self._page.focus(selector)
-        await self._page.evaluate("navigator.clipboard.writeText(arguments[0])", text)
+
+        # Correct way to pass an argument to Page.evaluate
+        await self._page.evaluate("text => navigator.clipboard.writeText(text)", text)
+        
+        # A small delay is sometimes needed for clipboard to be ready on some systems
+        await asyncio.sleep(0.5) 
+        
         modifier = "Meta" if platform.system() == "Darwin" else "Control"
         await self._page.keyboard.press(f"{modifier}+V")
+        
         return f"Pasted text into {selector}"
 
     async def get_page_html(self, selector: str) -> str:
@@ -176,13 +184,54 @@ class PlaywrightAdapter(BrowserAdapter):
         logger.info(f"[BROWSER] Getting HTML for selector: '{selector}'")
         try:
             element = self._page.locator(selector)
-            html_content = await element.inner_html(timeout=5000)
+            # Increase the timeout to 30 seconds to handle slow network conditions.
+            html_content = await element.inner_html(timeout=30000)
             return f"<html><body>{html_content}</body></html>"
         except Exception as e:
             logger.error(f"Could not get HTML for selector '{selector}': {e}")
             return f"Error: Could not get HTML. {e}"
+
     async def wait(self, seconds: int) -> str:
         """Pauses execution for a specified number of seconds."""
         logger.info(f"Waiting for {seconds} second(s)...")
         await asyncio.sleep(seconds)
         return f"Successfully waited for {seconds} second(s)."
+
+    async def get_activity_post_details(self, post_selector: str) -> Dict[str, Any]:
+        """Gets specific details from a single activity post using predefined selectors."""
+        await self.connect()
+        logger.info(f"[BROWSER] Getting details for post: '{post_selector}'")
+        try:
+            # Locate the main post container
+            post_element = self._page.locator(post_selector).first
+
+            # Define the inner selectors
+            author_selector = '.update-components-actor__name'
+            text_selector = '.update-components-update-content__text-paragraph'
+            likes_selector = '.social-details-social-counts__reactions-count'
+            
+            # We need to explicitly wait for the author element to be visible
+            # as a signal that the inner content has fully loaded.
+            author_locator = post_element.locator(author_selector)
+            await author_locator.wait_for(state="visible", timeout=30000)
+
+            # Extract the data from the child elements
+            author = await author_locator.inner_text()
+            text = await post_element.locator(text_selector).inner_text()
+            
+            # Likes may not always be present, so we'll handle the potential exception
+            likes_count = "0"
+            try:
+                likes_count = await post_element.locator(likes_selector).first.inner_text(timeout=5000)
+            except Exception:
+                pass # No likes element found
+
+            return {
+                "author": author.strip(),
+                "text": text.strip(),
+                "likes": likes_count.strip(),
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to get post details for '{post_selector}': {e}")
+            return {"author": "Error", "text": str(e), "likes": "Error"}

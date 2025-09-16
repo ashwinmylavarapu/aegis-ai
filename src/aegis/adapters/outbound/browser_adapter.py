@@ -35,8 +35,11 @@ class BrowserAdapter(ABC):
     async def extract_data(self, selector: str, fields: Dict[str, str], limit: int) -> List[Dict[str, Any]]:
         pass
     
-    # --- THIS IS THE FIX (Part 1) ---
-    # Add the new 'wait' method to the contract.
+    @abstractmethod
+    async def get_activity_post_details(self, post_selector: str) -> Dict[str, Any]:
+        """Gets specific details from a single activity post."""
+        pass
+    
     @abstractmethod
     async def wait(self, seconds: int) -> str:
         pass

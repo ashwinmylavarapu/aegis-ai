@@ -70,7 +70,12 @@ class GoogleGenAIAdapter(LLMAdapter):
                 name="wait",
                 description="Pauses execution for a specified number of seconds to allow content to load.",
                 parameters={"type": "object", "properties": {"seconds": {"type": "integer"}}, "required": ["seconds"]},
-            ),            
+            ),   
+            FunctionDeclaration(
+                name="wait_for_element",
+                description="Waits for an element to appear in the DOM before proceeding.",
+                parameters={"type": "object", "properties": {"selector": {"type": "string"}, "timeout": {"type": "integer"}}, "required": ["selector"]},
+            ),         
         ]
         
         self.system_instruction = (

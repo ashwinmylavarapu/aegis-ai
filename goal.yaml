@@ -1,9 +1,9 @@
-run_id: "linkedin-activity-debug-capture-first-post"
-description: "Capture the HTML of the first visible post on the activity page immediately after it loads."
+run_id: "image-then-charsheet-01"
+description: "Generate an image of a character, then a character sheet for them."
 goal_type: natural_language
 prompt: |
-  1. Navigate to https://www.linkedin.com/in/aagupta/recent-activity/all/
-  2. **Wait for the first post container to become visible.** The selector for the post container is 'div.occludable-update'.
-  2b. ** wait for 20 seconds **
-  3. **Immediately after the first post is visible, and without scrolling**, use the `get_page_html` tool to get the full HTML of that first post container. The selector is 'div.occludable-update >> nth=0'.
-  4. Call `finish_task` and provide the raw HTML you extracted as the summary.
+  1. Navigate to https://gemini.google.com/u/2/app
+  2. Use the `type_text` tool with the selector `div.ql-editor[role="textbox"]` to enter the following prompt: "Generate an image of a south Indian woman mid 20s. Stunning beauty with traditional beauty wearing kurta. Close up portrait shot with subject smiling. A frontal view profile."
+  3. Click the send message button using the selector `button[aria-label="Send message"]`.
+  4. Wait for 20 seconds for the image to be generated.
+  5. The final action to perform is to `finish_task` with a summary of the outcome.
