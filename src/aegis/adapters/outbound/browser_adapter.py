@@ -43,3 +43,7 @@ class BrowserAdapter(ABC):
     @abstractmethod
     async def wait(self, seconds: int) -> str:
         pass
+    @abstractmethod
+    async def paste_image(self, selector: str, image_bytes: bytes) -> str:
+        """Pastes an image from a byte string into a specified element."""
+        pass

@@ -76,6 +76,11 @@ class GoogleGenAIAdapter(LLMAdapter):
                 description="Waits for an element to appear in the DOM before proceeding.",
                 parameters={"type": "object", "properties": {"selector": {"type": "string"}, "timeout": {"type": "integer"}}, "required": ["selector"]},
             ),         
+            FunctionDeclaration(
+                name="paste_image",
+                description="Pastes an image from the clipboard into a specified element.",
+                parameters={"type": "object", "properties": {"selector": {"type": "string"}, "image_bytes": {"type": "string"}}, "required": ["selector", "image_bytes"]},
+            ),
         ]
         
         self.system_instruction = (
