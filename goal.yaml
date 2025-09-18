@@ -8,6 +8,7 @@ tasks:
       Your goal is to generate two distinct images based on the following instructions.
       You MUST call the `finish_task` tool immediately after the second image generation is complete.
       NOTE: You should already be on the correct page.
+      1. Navigate to https://gemini.google.com/u/2/app
 
       # Image 1: Running Pose
       1. Paste a side profile, full length reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
@@ -43,7 +44,6 @@ tasks:
       You MUST call the `finish_task` tool immediately after the second image generation is complete.
 
       # Image 1: Casual Evening Look
-      1. Navigate to https://gemini.google.com/u/2/app
       2. Paste the straight, close portrait reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
       3. Use `type_text` to enter the prompt: "Change attire to a t-shirt and jeans. Change background to home. Set evening light."
       4. Click the send button with selector `button[aria-label="Send message"]`.
