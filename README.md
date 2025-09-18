@@ -1,118 +1,127 @@
-# Aegis Framework
 
-## Project Mission & Vision
+# Aegis Automation Framework
 
-**Problem:** Production-grade browser automation is often plagued by brittle, non-repeatable, and insecure scripts. Hardcoded logic, changing selectors, and timing issues lead to high maintenance overhead and unreliable operations.
+A resilient, adaptive agent for robust UI automation.
 
-**Mission:** The Aegis Framework aims to solve this by introducing rigor and reliability to the browser automation process. It enforces a strict separation of intent (the "what") from execution (the "how"). An operator declares a goal, and the framework compiles it into an explicit, verifiable, and policy-approved execution plan. This creates an "abstraction firewall," ensuring the automation process is deterministic, observable, and secure by design.
+---
 
-## Core Principles
+## 1. The "Why": The Big Picture
 
-This framework is a reference implementation of our shared coding ethos, emphasizing:
+### The Problem: Brittle UI Automation
+Traditional UI automation is fundamentally fragile. Scripts are tightly coupled to the Document Object Model (DOM) through CSS selectors and XPaths. When a developer refactors the front-end—even for a minor style change—these selectors break, causing automation to fail. This leads to constant, expensive maintenance, flaky tests, and a lack of trust in automated processes.
 
-*   **Security by Default:** A "plan, approve, execute" workflow, enforced by a mandatory Policy-as-Code gate, is the primary defense against unintended actions and prompt injection.
-*   **Hexagonal Architecture:** Core logic is isolated from external integrations (CLI, API, LLM, Browser Engine) via swappable "Adapters."
-*   **Comprehensive & Pragmatic Testing:** Supplements high unit test coverage with mutation testing for critical logic and integration tests against mock adapters.
-*   **Production-Ready Observability:** An unbreakable audit trail is created using a unique `run_id` that correlates OpenTelemetry traces and structured logs across all components.
+### The Mission: A Resilient, Adaptive Agent
+The Aegis Framework is designed to solve this problem by creating a robust automation agent that can adapt to change. Our mission is a two-phase journey:
 
-## Architecture Overview
+1.  **Perfect the DOM-based Agent:** First, we've built a highly resilient agent that mitigates the fragility of the DOM. By decomposing complex goals into manageable tasks and equipping the agent with a persistent **checklist memory**, it can reliably execute multi-step workflows without getting lost or stuck in loops.
+2.  **Evolve to a Visual Agent:** The ultimate goal is to make the agent **self-healing** by giving it vision. The next evolution of Aegis will use a multimodal model to *see* and *understand* a UI like a human, making it almost completely immune to underlying code changes.
 
-The Aegis Framework follows a core three-layer architecture: **Goal** → **Planning** → **Approval** → **Execution**.
+---
 
-1.  **Goal (The "What"):** An operator defines a high-level automation objective in a `goal.yaml` file.
-2.  **Planning (The "Compiler"):** An AI Decomposer (LLM) converts the natural language goal into a detailed, structured `plan.json` using available "Skills" and "Actions."
-3.  **Approval (The "Gate"):** The generated `plan.json` undergoes automated validation by an Open Policy Agent (OPA) and can optionally be subjected to human approval. Only approved plans proceed.
-4.  **Execution (The "Runner"):** A locked, immutable `plan.lock.json` is created and executed step-by-step by the Orchestrator, interacting with external systems via adapters.
+## 2. The "What": Core Concepts & Architecture
 
-## Technology Stack
+### Core Architecture: Checklist-Driven Cognition
+The framework is built on Hexagonal Architecture principles, centered around an intelligent orchestrator that uses a stateful memory to guide its reasoning.
 
-*   **Language:** Python 3.11+
-*   **Dependency Management:** `requirements.txt` (using a `.venv` virtual environment)
-*   **Orchestration:** LangGraph
-*   **Core Logic & State:** Pydantic
-*   **CLI/API Adapters:** Click / FastAPI
-*   **Testing:** Pytest, mutmut
-*   **Policy Engine:** Open Policy Agent (OPA)
-*   **Browser Interaction:** BrowserMCP Server (Node.js application) via `fastmcp` (Python client library)
+* **Orchestrator (The Brain):** The cognitive core of the agent. It uses an LLM (e.g., Gemini) to interpret high-level goals from a Playbook and decide on the next action.
+* **Persistent Memory (The Checklist):** To prevent loops and combat context window limitations, the agent maintains a stateful **checklist** of completed actions for each task. Before thinking, the agent is always reminded of what it has already accomplished, allowing it to make accurate decisions even with a limited short-term memory (the LLM's chat history).
+* **Adapters (The Hands):** Following the Ports and Adapters pattern, all external interactions are handled by swappable adapters. The primary adapter is the `PlaywrightAdapter`, which executes commands like `click` and `type_text` in the browser.
 
-## Directory Structure
+### The Playbook Concept
+We do not write scripts; we write **Playbooks**. This approach enhances "developer joy" and aligns with our **Maintainability** ethos.
 
-The project adheres closely to the proposed structure from the architecture document:
+* **Location:** All playbooks are stored in the `playbooks/` directory.
+* **Format:** A playbook is a `.yaml` file that describes a high-level objective broken down into a series of logical tasks.
+* **Declarative, Not Imperative:** Playbooks describe *what* the agent should achieve in human-readable language. This makes them easy to write, review, and maintain.
+
+### Directory & File Structure
+The project is organized to separate concerns, making it easy to navigate and extend.
 
 ```
-/aegis-framework
-├── config.yaml             # Example configuration (example_config.yaml)
-├── requirements.txt        # Python dependencies
-├── skills/                 # Placeholder for skill definitions
-│   └── *.skill.yaml
+
+.
+├── playbooks/                \# Contains all high-level automation plans (Playbooks).
+│   ├── character-sheet-base/
+│   │   └── goal.yaml
+│   └── character-sheet-extended/
+│       └── goal\_lighting\_and\_angles.yaml
+│
 ├── src/
 │   └── aegis/
-│       ├── core/
-│       │   ├── orchestrator.py   # Main orchestration logic
-│       │   └── agents/           # Planner agent logic
-│       ├── adapters/
-│       │   ├── inbound/
-│       │   │   ├── cli.py        # CLI adapter
-│       │   │   └── api/          # API adapter
-│       │   └── outbound/
-│       │       ├── browser_mcp_adapter.py # Browser interaction adapter
-│       │       └── llm_adapter_factory.py # LLM integration
-│       └── main.py             # CLI entry point
-│       └── policy/             # OPA policies
-│           └── allow.rego
-└── tests/                  # Unit and integration tests
-```
+│       ├── adapters/           \# Hexagonal pattern: all outbound communication.
+│       │   ├── outbound/
+│       │   │   ├── playwright\_adapter.py  \# The "Hands" - controls the browser.
+│       │   │   └── google\_genai\_adapter.py  \# Connects to the LLM.
+│       │
+│       ├── core/               \# The heart of the agent.
+│       │   ├── orchestrator.py \# The "Brain" - manages the agent's state and loop.
+│       │   ├── models.py       \# Pydantic models for state, goals, and plans.
+│       │   └── context\_manager.py \# The safety net for context window management.
+│       │
+│       ├── skills/             \# Reusable, complex business logic functions.
+│       │
+│       └── main.py             \# The application's main entry point.
+│
+├── config.yaml               \# Your local configuration (API keys, endpoints).
+├── example\_config.yaml       \# A template for configuration.
+├── requirements.txt          \# Project dependencies.
+└── scorecard.yaml            \# Production readiness checklist (enforced by ethos).
 
-## Current Status & Progress
+````
 
-The core framework is set up, and significant progress has been made on integrating the BrowserMCP.
+---
 
-*   **Initial Setup:** Project structure and basic components are in place.
-*   **Dependency Management:** All Python dependencies from `requirements.txt` are successfully installed within the `.venv` virtual environment. `fastmcp` is confirmed to be installed and used.
-*   **Core Orchestrator:** The LangGraph-based orchestrator runs successfully through the planning, policy check, and human approval (auto-approved for now) stages.
-*   **Browser Adapter Refactoring:** The `browser_mcp_adapter.py` has been refactored to use `fastmcp.Client` for asynchronous communication with the BrowserMCP server. All browser interaction methods are now `async`.
-*   **Asynchronous Execution:** The entire orchestration flow (`main.py`, `orchestrator.py`, `browser_mcp_adapter.py`) has been updated to support `asyncio`.
+## 3. The "How": Getting Started
 
-**Current Challenge:**
+### Quickstart Guide
 
-The `fastmcp.Client` is failing to connect to the BrowserMCP server with the error: `Client failed to connect: All connection attempts failed`.
+1.  **Prerequisites:**
+    * Python 3.11+
+    * A running instance of a Chromium-based browser (like Google Chrome).
 
-*   **Debugging Step Taken:** The `_start_server` method in `browser_mcp_adapter.py` has been modified to print the `stdout` and `stderr` of the `npx @browsermcp/mcp@latest` process. This is crucial for identifying the actual port/URL the BrowserMCP server is listening on or any startup errors it might be encountering. The `asyncio.sleep` duration before attempting connection has also been increased to 10 seconds.
-
-## Next Steps
-
-The immediate next steps are focused on resolving the BrowserMCP connection issue and then proceeding with the full implementation of the automation flow:
-
-1.  **Analyze BrowserMCP Server Output:** Run the application and carefully examine the `BrowserMCP Server STDOUT` and `BrowserMCP Server STDERR` logs. This output will reveal:
-    *   The exact URL and port the BrowserMCP server is listening on.
-    *   Any errors or warnings during the BrowserMCP server's startup.
-2.  **Adjust BrowserMCP Connection:** Based on the server output, update the `url` in the `config` dictionary within `browser_mcp_adapter.py` to the correct address and protocol (e.g., `http://localhost:XXXX/mcp/` or `ws://localhost:XXXX`).
-3.  **Verify Browser Interaction:** Once connected, ensure that `navigate`, `type_text`, `click`, `wait_for_element`, and `extract_data` methods correctly interact with a browser instance.
-4.  **Implement `internal_auth.login` Skill:** Develop the actual logic for the `internal_auth.login` skill, which is currently a placeholder.
-5.  **Integrate OPA:** Fully integrate Open Policy Agent for robust policy enforcement on generated plans.
-6.  **Full Observability:** Implement comprehensive OpenTelemetry tracing and structured logging across all components.
-7.  **Testing:** Develop and integrate unit, mutation, and integration tests as per the core principles.
-
-## How to Run
-
-To set up and run the Aegis Framework:
-
-1.  **Clone the repository:**
+2.  **Installation:**
     ```bash
-    git clone <repository_url>
+    # Clone the repository
+    git clone <your-repo-url>
     cd aegis-framework
-    ```
-2.  **Create and activate virtual environment:**
-    ```bash
+
+    # Create and activate a virtual environment
     python3 -m venv .venv
     source .venv/bin/activate
-    ```
-3.  **Install Python dependencies:**
-    ```bash
+
+    # Install dependencies
     pip install -r requirements.txt
     ```
-4.  **Run the application:**
+
+3.  **Browser Setup:**
+    The agent connects to an existing browser instance. You must launch your browser with the remote debugging port enabled.
     ```bash
-    PYTHONPATH=src .venv/bin/python src/aegis/main.py run goal.yaml
+    # Example for Google Chrome on macOS
+    /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9222 --user-data-dir=~/chrome-dev-session
     ```
-    *(Note: The `goal.yaml` file defines the automation task to be executed.)*
+
+4.  **Configuration:**
+    Copy the example config and add your API keys.
+    ```bash
+    cp example_config.yaml config.yaml
+    # Now, edit config.yaml to add your GOOGLE_API_KEY
+    ```
+
+5.  **Running a Playbook:**
+    Execute a playbook using the `main.py` entry point.
+    ```bash
+    PYTHONPATH=src .venv/bin/python src/aegis/main.py run playbooks/character-sheet-base/goal.yaml
+    ```
+
+---
+
+## 4. The Future: A Self-Healing Visual Agent
+
+The ultimate vision for Aegis is to eliminate the final piece of brittle logic—CSS selectors—by giving the agent **vision**. This future architecture is called **"Eyes, Brain, Hands"**.
+
+* **Eyes (The Visual Adapter):** A future component that will use a multimodal model (like **Microsoft OmniParser**) to *see* the UI. It will take a screenshot and return a labeled list of all interactive elements and their coordinates.
+* **Brain (Upgraded):** The agent's brain will be upgraded to correlate the playbook's human-like instructions (e.g., "click the send button") with the visual labels provided by the "Eyes."
+* **Hands (Upgraded):** The hands will learn new skills to act on visual cues, such as `click_element(label='e3')`, which will click coordinates instead of selectors.
+
+This will make our playbooks 100% declarative and create a truly self-healing system that is almost completely immune to front-end code changes. This is the project's primary strategic goal.
+````
