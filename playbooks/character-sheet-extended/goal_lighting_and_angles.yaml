@@ -45,12 +45,14 @@ tasks:
       5. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
 
       # Image 3: Dutch Angle
-      6. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Waist-up shot. Dutch angle, tilted camera. She is running through a crowded market, creating a sense of motion and excitement."
-      7. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+      6. Paste a straight, waist-up reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
+      7. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Waist-up shot. Dutch angle, tilted camera. She is running through a crowded market, creating a sense of motion and excitement."
+      8. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
 
       # Image 4: Over-the-Shoulder
-      8. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Waist-up shot. Over-the-shoulder view from behind her. She is looking at a piece of art in a museum."
-      9. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+      9. Paste a straight, waist-up reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
+      10. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Waist-up shot. Over-the-shoulder view from behind her. She is looking at a piece of art in a museum."
+      11. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
       
       # Image 5: Close-up Profile
       10. Paste a side profile, close-up reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
