@@ -104,7 +104,7 @@ class GoogleGenAIAdapter(LLMAdapter):
     async def generate_plan(self, history: List[Dict[str, Any]] = []) -> List[Dict[str, Any]]:
         logger.info(f"Generating plan based on conversation history.")
         gemini_history = convert_history_to_gemini(history)
-        
+        logger.debug(f"Gemini history: {gemini_history}")
         try:
             response = await self.model.generate_content_async(
                 contents=gemini_history,
