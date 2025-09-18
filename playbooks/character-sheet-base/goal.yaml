@@ -2,13 +2,27 @@ run_id: "virtual-influencer-dataset-generation-v2"
 description: "Generate a dataset of images for a virtual influencer using a character reference and iterative commands."
 
 tasks:
+  - name: "Task 1: Generate Straight Profile Headshots"
+    prompt: |
+      Your goal is to generate two distinct headshot images.
+      You MUST call the `finish_task` tool immediately after the second image generation is complete.
 
+      # Image 1: Casual Evening Look
+      2. Paste the straight, close portrait reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
+      3. Use `type_text` to enter the prompt: "Change attire to a t-shirt and jeans. Change background to home. Set evening light."
+      4. Click the send button with selector `button[aria-label="Send message"]`.
+      5. Wait for 60 seconds.
+
+      # Image 2: Party Look
+      6. Use `type_text` to enter the prompt: "Change attire to party wear. Set home dimlit. Make her waving."
+      7. Click the send button with selector `button[aria-label="Send message"]`.
+      8. Wait for 60 seconds.
+      
   - name: "Task 5: Generate Dynamic and Beach Poses"
     prompt: |
       Your goal is to generate two distinct images based on the following instructions.
       You MUST call the `finish_task` tool immediately after the second image generation is complete.
       NOTE: You should already be on the correct page.
-      1. Navigate to https://gemini.google.com/u/2/app
 
       # Image 1: Running Pose
       1. Paste a side profile, full length reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
@@ -38,21 +52,7 @@ tasks:
       5. Use `type_text` to enter the prompt: "Make it a back profile. Change attire to a saree. Set evening light. Change background to a park."
       6. Click the send button with selector `button[aria-label="Send message"]`.
       7. Wait for 60 seconds.
-  - name: "Task 1: Generate Straight Profile Headshots"
-    prompt: |
-      Your goal is to generate two distinct headshot images.
-      You MUST call the `finish_task` tool immediately after the second image generation is complete.
 
-      # Image 1: Casual Evening Look
-      2. Paste the straight, close portrait reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
-      3. Use `type_text` to enter the prompt: "Change attire to a t-shirt and jeans. Change background to home. Set evening light."
-      4. Click the send button with selector `button[aria-label="Send message"]`.
-      5. Wait for 60 seconds.
-
-      # Image 2: Party Look
-      6. Use `type_text` to enter the prompt: "Change attire to party wear. Set home dimlit. Make her waving."
-      7. Click the send button with selector `button[aria-label="Send message"]`.
-      8. Wait for 60 seconds.
 
   - name: "Task 2: Generate Side Profile Shots with Different Emotions"
     prompt: |

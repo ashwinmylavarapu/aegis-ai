@@ -1,0 +1,141 @@
+run_id: "virtual-influencer-dataset-lighting-and-angles"
+description: "A character sheet expansion focusing on varied lighting conditions and camera angles."
+
+tasks:
+  - name: "Task 1: Dramatic Lighting - Full Length"
+    prompt: |
+      Your goal is to generate five distinct images with dramatic lighting.
+      You MUST call the `finish_task` tool immediately after the fifth image generation is complete.
+      NOTE: You should already be on the correct page.
+
+      # Image 1: Harsh Midday Sun
+      1. Paste a straight, full length reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
+      2. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Full length shot. Harsh midday sun creating sharp, dramatic shadows. She is squinting slightly. Change background to a modern city street."
+      3. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+
+      # Image 2: Golden Hour
+      4. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Full length shot. Warm, golden hour lighting. Soft light. She is smiling peacefully. Change background to a beach at sunset."
+      5. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+
+      # Image 3: Neon Noir
+      6. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Full length shot. Night time. Lit by vibrant, colorful neon signs from a city storefront. Reflective puddles on the ground. She has a mysterious expression."
+      7. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+      
+      # Image 4: Moonlight
+      8. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Full length shot. Backlit by a full moon. Cool, blue-toned light. A silhouette effect with some rim lighting on her hair and shoulders. Background is a quiet forest clearing."
+      9. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+      
+      # Image 5: Overcast Day
+      10. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Full length shot. Soft, diffused light from an overcast day. No harsh shadows. She is holding a book and looks thoughtful. Background is a university campus."
+      11. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+
+  - name: "Task 2: Varied Camera Angles - Waist Up"
+    prompt: |
+      Your goal is to generate five distinct images using varied camera angles.
+      You MUST call the `finish_task` tool immediately after the fifth image generation is complete.
+      NOTE: You should already be on the correct page.
+
+      # Image 1: High-Angle View
+      1. Paste a straight, waist-up reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
+      2. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Waist-up shot. High-angle view, looking down at her. She is sitting on a park bench looking up at the camera. She looks playful."
+      3. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+
+      # Image 2: Low-Angle View
+      4. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Waist-up shot. Low-angle view, looking up at her. She is standing and looks powerful and confident. Background is a skyscraper."
+      5. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+
+      # Image 3: Dutch Angle
+      6. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Waist-up shot. Dutch angle, tilted camera. She is running through a crowded market, creating a sense of motion and excitement."
+      7. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+
+      # Image 4: Over-the-Shoulder
+      8. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Waist-up shot. Over-the-shoulder view from behind her. She is looking at a piece of art in a museum."
+      9. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+      
+      # Image 5: Close-up Profile
+      10. Paste a side profile, close-up reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
+      11. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Extreme close-up side profile. Focus is on her eye. A single tear is rolling down her cheek. Dramatic, soft lighting."
+      12. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+
+  - name: "Task 3: Activities and Hobbies"
+    prompt: |
+      Your goal is to generate five distinct images showing the character engaged in activities.
+      You MUST call the `finish_task` tool immediately after the third image generation is complete.
+      NOTE: You should already be on the correct page.
+
+      # Image 1: Cooking
+      1. Paste a straight, full length reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
+      2. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Full length shot. She is in a bright, modern kitchen, joyfully tossing vegetables in a pan. She is wearing an apron."
+      3. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+
+      # Image 2: Painting
+      4. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Waist-up shot. She is in an art studio, focused on a canvas, with a paintbrush in hand. There are colorful paint splatters on her face and clothes."
+      5. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+
+      # Image 3: Reading
+      6. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Full length shot. Low-angle view. She is sitting on a large pile of old books in a grand library, deeply engrossed in one of them."
+      7. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+
+      # Image 4: Cycling
+      8. Paste a side profile, full length reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
+      9. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Full length side view. She is riding a vintage bicycle down a tree-lined country road in autumn."
+      10. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+      
+      # Image 5: Rain
+      11. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Full length shot. Night time on a city street. It is raining. She is holding a clear umbrella, and the city lights are reflecting on the wet pavement. She is smiling."
+      12. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+      
+  - name: "Task 4: Different Attire - Full Length"
+    prompt: |
+      Your goal is to generate five distinct images featuring different attire.
+      You MUST call the `finish_task` tool immediately after the fifth image generation is complete.
+      NOTE: You should already be on the correct page.
+
+      # Image 1: Traditional Festival Wear
+      1. Paste a straight, full length reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
+      2. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Full length shot. She is wearing a vibrant, decorative lehenga for a festival like Diwali. Background is decorated with lights and she is holding a diya."
+      3. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+      
+      # Image 2: Winter Wear
+      4. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Full length shot. She is wearing a warm winter coat, scarf, and beanie. She is smiling as snowflakes fall around her. Background is a snowy park."
+      5. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+
+      # Image 3: Business Executive
+      6. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Full length shot. Low-angle view. She is wearing a sharp, modern business suit and striding purposefully out of an office building."
+      7. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+
+      # Image 4: Motorcycle Gear
+      8. Paste a back profile, full length reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
+      9. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Full length shot from the back. She is wearing a leather motorcycle jacket and jeans, looking over her shoulder towards the camera. A motorcycle is visible next to her on a desert road."
+      10. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+      
+      # Image 5: Gown
+      11. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Full length shot. She is wearing an elegant evening gown at a formal event. Background is a grand ballroom with chandeliers."
+      12. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+      
+  - name: "Task 5: Studio Portrait Lighting - Headshots"
+    prompt: |
+      Your goal is to generate five distinct studio headshots.
+      You MUST call the `finish_task` tool immediately after the fifth image generation is complete.
+      NOTE: You should already be on the correct page.
+
+      # Image 1: Rembrandt Lighting
+      1. Paste a straight, close portrait reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
+      2. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Studio headshot. Rembrandt lighting, with a triangle of light on the cheek. Dark, moody background. She has a serious, intense expression."
+      3. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+      
+      # Image 2: Butterfly Lighting
+      4. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Studio headshot. Butterfly lighting, creating a small shadow under the nose. Glamorous and flattering. Plain light-colored background. She has a soft smile."
+      5. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+
+      # Image 3: Split Lighting
+      6. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Studio headshot. Split lighting, with one half of the face in light and the other in shadow. Very dramatic. She is looking directly at the camera with no expression."
+      7. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+
+      # Image 4: High Key
+      8. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Studio headshot. High-key lighting. Bright, airy, and optimistic feel. White background. She is laughing."
+      9. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+      
+      # Image 5: Low Key
+      10. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Studio headshot. Low-key lighting. Dark and mysterious, with most of the scene in shadow, just highlighting the edges of her face. She is looking away from the camera."
+      11. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
