@@ -2,6 +2,41 @@ run_id: "virtual-influencer-dataset-generation-v2"
 description: "Generate a dataset of images for a virtual influencer using a character reference and iterative commands."
 
 tasks:
+
+  - name: "Task 5: Generate Dynamic and Beach Poses"
+    prompt: |
+      Your goal is to generate two distinct images based on the following instructions.
+      You MUST call the `finish_task` tool immediately after the second image generation is complete.
+      NOTE: You should already be on the correct page.
+
+      # Image 1: Running Pose
+      1. Paste a side profile, full length reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
+      2. Use `type_text` to enter the prompt: "Make her running. Change attire to athletic wear. Change background to an adventure scene."
+      3. Click the send button with selector `button[aria-label="Send message"]`.
+      4. Wait for 60 seconds.
+
+      # Image 2: Beach Pose
+      5. Paste a straight, knee length reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
+      6. Use `type_text` to enter the prompt: "Change background to a beach. Change attire to 2 piece beachwear. Make her sitting on a towel. Set dawn lighting."
+      7. Click the send button with selector `button[aria-label="Send message"]`.
+      8. Wait for 60 seconds.
+
+  - name: "Task 6: Generate Final Back Profile Shots"
+    prompt: |
+      Your goal is to generate two distinct back profile images.
+      You MUST call the `finish_task` tool immediately after the second image generation is complete.
+      NOTE: You should already be on the correct page.
+
+      # Image 1: Running Pose
+      1. Paste a back profile, waist length reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
+      2. Use `type_text` to enter the prompt: "Make it a back profile. Make her in a dynamic running pose. Change attire to a t-shirt and jeans. Change background to an adventure scene."
+      3. Click the send button with selector `button[aria-label="Send message"]`.
+      4. Wait for 60 seconds.
+
+      # Image 2: Saree Pose
+      5. Use `type_text` to enter the prompt: "Make it a back profile. Change attire to a saree. Set evening light. Change background to a park."
+      6. Click the send button with selector `button[aria-label="Send message"]`.
+      7. Wait for 60 seconds.
   - name: "Task 1: Generate Straight Profile Headshots"
     prompt: |
       Your goal is to generate two distinct headshot images.
@@ -58,7 +93,6 @@ tasks:
       6. Use `type_text` to enter the prompt: "Change attire to formal wear. Change background to an office. Make her shrugging."
       7. Click the send button with selector `button[aria-label="Send message"]`.
       8. Wait for 60 seconds.
-
   - name: "Task 4: Generate Back Profile and Waist Length Shots"
     prompt: |
       Your goal is to generate three distinct images.
@@ -80,38 +114,3 @@ tasks:
       8. Use `type_text` to enter the prompt: "Change attire to a kurta. Change background to a cafe. Make her sitting."
       9. Click the send button with selector `button[aria-label="Send message"]`.
       10. Wait for 60 seconds.
-
-  - name: "Task 5: Generate Dynamic and Beach Poses"
-    prompt: |
-      Your goal is to generate two distinct images based on the following instructions.
-      You MUST call the `finish_task` tool immediately after the second image generation is complete.
-      NOTE: You should already be on the correct page.
-
-      # Image 1: Running Pose
-      1. Paste a side profile, full length reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
-      2. Use `type_text` to enter the prompt: "Make her running. Change attire to athletic wear. Change background to an adventure scene."
-      3. Click the send button with selector `button[aria-label="Send message"]`.
-      4. Wait for 60 seconds.
-
-      # Image 2: Beach Pose
-      5. Paste a straight, knee length reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
-      6. Use `type_text` to enter the prompt: "Change background to a beach. Change attire to 2 piece beachwear. Make her sitting on a towel. Set dawn lighting."
-      7. Click the send button with selector `button[aria-label="Send message"]`.
-      8. Wait for 60 seconds.
-
-  - name: "Task 6: Generate Final Back Profile Shots"
-    prompt: |
-      Your goal is to generate two distinct back profile images.
-      You MUST call the `finish_task` tool immediately after the second image generation is complete.
-      NOTE: You should already be on the correct page.
-
-      # Image 1: Running Pose
-      1. Paste a back profile, waist length reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
-      2. Use `type_text` to enter the prompt: "Make it a back profile. Make her in a dynamic running pose. Change attire to a t-shirt and jeans. Change background to an adventure scene."
-      3. Click the send button with selector `button[aria-label="Send message"]`.
-      4. Wait for 60 seconds.
-
-      # Image 2: Saree Pose
-      5. Use `type_text` to enter the prompt: "Make it a back profile. Change attire to a saree. Set evening light. Change background to a park."
-      6. Click the send button with selector `button[aria-label="Send message"]`.
-      7. Wait for 60 seconds.

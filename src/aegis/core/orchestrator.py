@@ -14,12 +14,13 @@ from aegis.skills.batch_processing import process_posts_in_batches
 from aegis.skills.activity_processing import process_activity_posts_in_batches
 from aegis.core.context_manager import ContextManager
 
-
+# UPDATED: The AgentState now includes the 'completed_steps' checklist
 class AgentState(TypedDict):
     goal: Goal
     history: Annotated[list, operator.add]
     max_steps: int
     steps_taken: int
+    completed_steps: Annotated[list, operator.add]
 
 
 async def agent_step(state: AgentState, config: RunnableConfig) -> Dict[str, Any]:
@@ -29,12 +30,27 @@ async def agent_step(state: AgentState, config: RunnableConfig) -> Dict[str, Any
 
     context_manager_config = main_config.get("context_management", {})
     context_manager = ContextManager(
-        max_history_items=context_manager_config.get("max_history_items", 10),
+        max_history_items=context_manager_config.get("max_history_items", 6), # Keep the safer, smaller history
         max_tool_output_tokens=context_manager_config.get("max_tool_output_tokens", 2000),
     )
     managed_history = context_manager.manage(state['history'])
-    logger.info(f"Managed history has {len(managed_history)} items.")
+    
+    # --- CHECKLIST INJECTION ---
+    # Give the agent a persistent memory of its progress for the current task.
+    completed_steps_str = "\n".join(f"- {step}" for step in state.get("completed_steps", []))
+    if completed_steps_str:
+        original_prompt = state["goal"].prompt
+        # Augment the original prompt with the checklist of completed steps
+        new_prompt = (
+            f"You are working on a multi-step task. Here is the original plan:\n--- TASK PLAN ---\n{original_prompt}\n\n"
+            f"You have already completed the following steps:\n--- COMPLETED ---\n{completed_steps_str}\n\n"
+            "Based on this progress, what is the single next action you need to take? If all steps in the plan are complete, you MUST call the `finish_task` tool."
+        )
+        # We replace the original user message with our new, context-aware prompt
+        managed_history[0]['content'] = new_prompt
 
+    logger.info(f"Managed history has {len(managed_history)} items. Agent is aware of {len(state.get('completed_steps', []))} completed steps.")
+    
     plan = await llm_adapter.generate_plan(history=managed_history)
 
     if not plan:
@@ -54,7 +70,7 @@ async def tool_step(state: AgentState, config: RunnableConfig) -> Dict[str, Any]
 
     context_manager_config = main_config.get("context_management", {})
     context_manager = ContextManager(
-        max_history_items=context_manager_config.get("max_history_items", 10),
+        max_history_items=context_manager_config.get("max_history_items", 6),
         max_tool_output_tokens=context_manager_config.get("max_tool_output_tokens", 2000),
     )
 
@@ -62,6 +78,7 @@ async def tool_step(state: AgentState, config: RunnableConfig) -> Dict[str, Any]
     tool_calls = ai_response.get("content", [])
 
     tool_outputs = []
+    completed_steps_for_this_turn = []
     for call in tool_calls:
         tool_name = call.get("tool_name")
         tool_args = call.get("tool_args", {})
@@ -69,6 +86,11 @@ async def tool_step(state: AgentState, config: RunnableConfig) -> Dict[str, Any]
         logger.success(f"Executing tool: '{tool_name}' with args: {tool_args}")
 
         output = await orchestrator_instance.execute_tool(tool_name, tool_args)
+        
+        # --- CHECKLIST RECORDING ---
+        # Record the executed action as a completed step.
+        args_str = ", ".join(f"{k}='{v}'" for k, v in tool_args.items())
+        completed_steps_for_this_turn.append(f"{tool_name}({args_str})")
 
         if isinstance(output, str):
             truncated_output = context_manager._truncate_content(output)
@@ -78,21 +100,20 @@ async def tool_step(state: AgentState, config: RunnableConfig) -> Dict[str, Any]
         tool_outputs.append({"tool_name": tool_name, "tool_output": truncated_output})
 
     tool_turn = {"type": "tool", "content": tool_outputs}
-    return {"history": [tool_turn]}
+    # Return both the tool output and the newly completed steps to update the agent's state
+    return {"history": [tool_turn], "completed_steps": completed_steps_for_this_turn}
 
 
 def should_continue(state: AgentState) -> str:
     if state["steps_taken"] >= state["max_steps"]:
         logger.warning(f"Max steps ({state['max_steps']}) reached. Halting execution.")
         return "end"
-
     last_turn = state['history'][-1]
     if last_turn['type'] == 'ai':
         for tool_call in last_turn.get('content', []):
             if tool_call.get('tool_name') == 'finish_task':
                 logger.success("Task complete. `finish_task` was called.")
                 return "end"
-
     return "continue"
 
 
@@ -121,11 +142,9 @@ class Orchestrator:
         if tool_name in self.skills:
             skill_func = self.skills[tool_name]
             return await skill_func(orchestrator=self, **tool_args)
-        
         if hasattr(self.browser_adapter, tool_name):
             method = getattr(self.browser_adapter, tool_name)
             return await method(**tool_args)
-        
         logger.error(f"Unknown tool called: {tool_name}")
         return f"Error: Tool '{tool_name}' not found."
 
@@ -148,14 +167,15 @@ class Orchestrator:
 
             logger.info(f"--- EXECUTING TASK ({i+1}/{len(tasks)}): {task_name} ---")
 
-            # FIXED: Added the required 'goal_type' field.
             task_goal = Goal(run_id=f"{run_id}_{i+1}", description=task_name, prompt=task_prompt, goal_type="natural_language")
 
+            # UPDATED: Initialize the state with the new empty 'completed_steps' list for each task.
             initial_state = {
                 "goal": task_goal,
                 "history": [{"type": "human", "content": task_goal.prompt}],
                 "max_steps": max_steps_per_task,
                 "steps_taken": 0,
+                "completed_steps": [],
             }
             
             runnable_config = {"configurable": {"orchestrator_instance": self, **self.config}, "recursion_limit": max_steps_per_task}
@@ -163,7 +183,7 @@ class Orchestrator:
             async for event in self.workflow.astream(initial_state, runnable_config):
                 pass
             
-            logger.success(f"--- COMPLETED TASK: {task_name} ---")
+            logger.info(f"--- COMPLETED TASK: {task_name} ---")
 
         await self.browser_adapter.close()
-        logger.success(f"--- GOAL FINISHED: {run_id} ---")
+        logger.info(f"--- GOAL FINISHED: {run_id} ---")

@@ -13,7 +13,7 @@ llm:
     api_key: "kQMgOqm4E1QF80V3UZY_Yqiu-w3pEi_k7P_KV19m8oY" # Replace with your actual key
     base_url: "https://api.poe.com/v1" # Optional, for proxy
 context_management:
-  max_history_items: 10
+  max_history_items: 6
   max_tool_output_tokens: 2500
 # Configure the browser adapter to use browsermcp
 browser:
