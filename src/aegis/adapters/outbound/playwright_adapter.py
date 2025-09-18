@@ -197,7 +197,7 @@ class PlaywrightAdapter(BrowserAdapter):
         logger.info(f"Waiting for {seconds} second(s)...")
         # add random delta 
         import random
-        delta = random.randint(1, 20)
+        delta = random.randint(1, 2)
         seconds += delta
         await asyncio.sleep(seconds)
         return f"Successfully waited for {seconds} second(s)."
@@ -258,3 +258,37 @@ class PlaywrightAdapter(BrowserAdapter):
         except Exception as e:
             logger.error(f"Failed to paste image: {e}")
             return f"Error: Failed to paste image. {e}"
+
+    async def press_key(self, key: str) -> str:
+        """
+        Simulates a single key press on the keyboard.
+        This method automatically corrects the case of modifier keys
+        (e.g., 'alt' to 'Alt').
+        
+        Args:
+            key (str): The key to press, e.g., 'Enter', 'Alt+a', 'Control+C'.
+        """
+        await self.connect()
+        logger.info(f"[BROWSER] Received key press request: '{key}'")
+
+        # Define lowercase modifier keys that need capitalization
+        modifiers = ['alt', 'control', 'meta', 'shift']
+        
+        # Correct the capitalization of modifiers
+        key_parts = key.split('+')
+        corrected_parts = [
+            part.capitalize() if part.lower() in modifiers else part 
+            for part in key_parts
+        ]
+        corrected_key = '+'.join(corrected_parts)
+        
+        # Log if a correction was made
+        if key != corrected_key:
+            logger.info(f"Corrected key to '{corrected_key}' for Playwright API.")
+
+        try:
+            await self._page.keyboard.press(corrected_key)
+            return f"Successfully pressed the '{key}' key."
+        except Exception as e:
+            logger.error(f"Failed to press key '{key}' (used '{corrected_key}'): {e}")
+            return f"Error: Failed to press key '{key}'. {e}"

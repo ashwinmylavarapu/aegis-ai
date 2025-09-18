@@ -45,11 +45,7 @@ class GoogleGenAIAdapter(LLMAdapter):
                 description="A debugging tool that gets the full inner HTML of a single element, specified by a CSS selector.",
                 parameters={"type": "object", "properties": {"selector": {"type": "string"}}, "required": ["selector"]},
             ),
-            FunctionDeclaration(
-                name="find_elements",
-                description="Finds all elements matching a CSS selector and returns a list of their unique selectors.",
-                parameters={"type": "object", "properties": {"selector": {"type": "string"}, "limit": {"type": "integer"}}, "required": ["selector"]},
-            ),
+
             FunctionDeclaration(
                 name="process_posts_in_batches",
                 description="For the MAIN feed. Takes a list of post selectors and extracts details from all of them.",
@@ -86,6 +82,11 @@ class GoogleGenAIAdapter(LLMAdapter):
                 description="Types text into an element.",
                 parameters={"type": "object", "properties": {"selector": {"type": "string"}, "text": {"type": "string"}}, "required": ["selector", "text"]},
             ),       
+            FunctionDeclaration(
+                name="press_key",
+                description="Simulates a single key press on the keyboard, like 'Enter' or 'ArrowDown' or any single key.",
+                parameters={"type": "object", "properties": {"key": {"type": "string"}}, "required": ["key"]},
+            ),
         ]
 
         
