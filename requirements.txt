@@ -1,19 +1,20 @@
-langgraph
-pydantic
-click
-fastapi
-uvicorn[standard]
-opentelemetry-api
-opentelemetry-sdk
-opentelemetry-exporter-otlp
-opa-python-client
-python-dotenv
-pytest
-mutmut
+# requirements.txt
+# Core dependencies
+PyYAML
 google-generativeai
-openai
-loguru
 playwright
-beautifulsoup4
-tenacity
-thefuzz
+asyncio
+loguru
+openai
+
+# OmniParser and Vision Model Dependencies
+torch
+torchvision
+ultralytics
+transformers
+Pillow
+numpy
+opencv-python
+pytesseract
+paddleocr
+tqdm

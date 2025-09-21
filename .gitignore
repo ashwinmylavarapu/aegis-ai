@@ -271,4 +271,7 @@ Thumbs.db
 logs
 *.log
 chrome-dev-session
+scripts/workdir/
+src/outputs
+screenshots
 scripts/omni_workdir/

@@ -1,3 +1,4 @@
+# src/aegis/adapters/outbound/browser_adapter_factory.py
 from typing import Dict, Any
 from loguru import logger
 
@@ -8,6 +9,7 @@ from .playwright_adapter import PlaywrightAdapter
 _browser_adapter_instance = None
 
 def get_browser_adapter(config: Dict[str, Any]) -> BrowserAdapter:
+    """Factory function to get a singleton instance of the configured browser adapter."""
     global _browser_adapter_instance
 
     if _browser_adapter_instance:
@@ -23,5 +25,5 @@ def get_browser_adapter(config: Dict[str, Any]) -> BrowserAdapter:
         _browser_adapter_instance = NoOpBrowserAdapter()
     else:
         raise ValueError(f"Unknown browser adapter type: {adapter_type}")
-    
+
     return _browser_adapter_instance

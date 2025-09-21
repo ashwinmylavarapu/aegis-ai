@@ -1,294 +1,115 @@
-import asyncio
-import platform
-from typing import Dict, Any, List, Optional
-
+# src/aegis/adapters/outbound/playwright_adapter.py
+from typing import List, Dict, Any
 from loguru import logger
-from playwright.async_api import async_playwright, Browser, Page, Playwright, TimeoutError as PlaywrightTimeoutError
-from bs4 import BeautifulSoup
-from thefuzz import process
-import base64
+from playwright.async_api import async_playwright
 
-from .browser_adapter import BrowserAdapter
+from .base import OutboundAdapter
 
-class PlaywrightAdapter(BrowserAdapter):
+
+class PlaywrightAdapter(OutboundAdapter):
     def __init__(self, config: Dict[str, Any]):
-        self.config = config.get("browser", {}).get("playwright", {})
-        self.cdp_endpoint = self.config.get("cdp_endpoint")
-        if not self.cdp_endpoint:
-            raise ValueError("Playwright config missing 'cdp_endpoint'")
-        self._playwright: Optional[Playwright] = None
-        self._browser: Optional[Browser] = None
-        self._page: Optional[Page] = None
-        self.is_connected = False
+        browser_config = config.get("browser", {}).get("playwright", {})
+        self.cdp_endpoint = browser_config.get("cdp_endpoint")
+        self.browser = None
+        self.page = None
+        logger.info(f"PlaywrightAdapter initialized. CDP Endpoint: {self.cdp_endpoint or 'Not set'}")
 
-    async def connect(self):
-        if self.is_connected:
-            return
-        logger.info(f"Connecting to browser at CDP endpoint: {self.cdp_endpoint}")
-        self._playwright = await async_playwright().start()
-        try:
-            self._browser = await self._playwright.chromium.connect_over_cdp(self.cdp_endpoint)
-            if self._browser.contexts and self._browser.contexts[0].pages:
-                self._page = self._browser.contexts[0].pages[0]
-            else:
-                context = await self._browser.new_context()
-                self._page = await context.new_page()
-            self.is_connected = True
-            logger.success("Successfully connected to browser.")
-        except Exception as e:
-            await self.close()
-            raise ConnectionError(f"Failed to connect to browser: {e}")
+    async def __aenter__(self):
+        self.playwright = await async_playwright().start()
+        if self.cdp_endpoint:
+            logger.info(f"Connecting to existing browser via CDP: {self.cdp_endpoint}")
+            self.browser = await self.playwright.chromium.connect_over_cdp(self.cdp_endpoint)
+            self.page = self.browser.contexts[0].pages[0]
+        else:
+            logger.info("Launching a new browser instance.")
+            self.browser = await self.playwright.chromium.launch(headless=False)
+            self.page = await self.browser.new_page()
+        return self
 
-    async def close(self):
-        if self._browser and self._browser.is_connected():
-            await self._browser.close()
-        if self._playwright:
-            await self._playwright.stop()
-        self._browser, self._page, self._playwright, self.is_connected = None, None, None, False
-        logger.info("Playwright connection closed.")
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if not self.cdp_endpoint and self.browser:
+            await self.browser.close()
+        if self.playwright:
+            await self.playwright.stop()
 
-    async def get_page_content(self, clean: bool = True) -> str:
-        await self.connect()
-        logger.info("[BROWSER] Getting page content")
-        html = await self._page.content()
-        if not clean: return html
-        soup = BeautifulSoup(html, 'html.parser')
-        for script_or_style in soup(['script', 'style']):
-            script_or_style.decompose()
-        text = '\n'.join(chunk for chunk in (phrase.strip() for line in (line.strip() for line in soup.get_text().splitlines()) for phrase in line.split("  ")) if chunk)
-        return text
-
-    async def _get_interactive_elements(self) -> List[Dict[str, str]]:
-        if not self._page:
-            raise ConnectionError("Page is not initialized. Call connect() first.")
-        
-        html_content = await self._page.content()
-        soup = BeautifulSoup(html_content, 'html.parser')
-        
-        elements = []
-        interactive_tags = ['a', 'button', 'input', 'textarea', 'select', 'label']
-        
-        for tag in soup.find_all(interactive_tags):
-            text = " ".join(tag.get_text(strip=True).split())
-            description = text or tag.get('aria-label', '') or tag.get('placeholder', '') or tag.get('name', '')
-            
-            if description:
-                escaped_text = text.replace('"', '\\"')
-                selector = f'{tag.name}:has-text("{escaped_text}")'
-                elements.append({"selector": selector, "description": description})
-                
-        return elements
-
-    # --- Start of Abstract Method Implementations and Core Tools ---
-
-    async def navigate(self, url: str) -> str:
-        await self.connect()
-        if not url.startswith(('http://', 'https://')):
-            url = f"https://{url}"
-        logger.info(f"[BROWSER] Navigating to {url}")
-        await self._page.goto(url, wait_until="domcontentloaded")
+    async def navigate(self, url: str):
+        logger.info(f"Navigating to {url}")
+        await self.page.goto(url)
         return f"Successfully navigated to {url}"
 
-    async def click(self, selector: str) -> str:
-        await self.connect()
-        logger.info(f"[BROWSER] Clicking '{selector}'")
-        await self._page.click(selector)
-        return f"Successfully clicked '{selector}'"
+    async def click(self, selector: str):
+        logger.info(f"Clicking on element with selector: {selector}")
+        await self.page.click(selector)
+        return f"Successfully clicked on element with selector: {selector}"
 
-    async def type_text(self, selector: str, text: str) -> str:
-        await self.connect()
-        logger.info(f"[BROWSER] Typing '{text}' into '{selector}'")
-        await self._page.fill(selector, text)
-        return f"Successfully typed text into '{selector}'"
+    async def type_text(self, selector: str, text: str):
+        logger.info(f"Typing '{text}' into element with selector: {selector}")
+        await self.page.fill(selector, text)
+        return f"Successfully typed '{text}' into element with selector: {selector}"
 
-    async def wait_for_element(self, selector: str, timeout: int = 10) -> str:
-        await self.connect()
-        logger.info(f"[BROWSER] Waiting for element '{selector}' for {timeout}s")
-        try:
-            await self._page.wait_for_selector(selector, timeout=timeout * 1000)
-            logger.success(f"Element '{selector}' appeared.")
-            return f"Element '{selector}' is present."
-        except PlaywrightTimeoutError:
-            logger.warning(f"Timed out waiting for element '{selector}'.")
-            return f"Error: Timed out waiting for element '{selector}'."
+    async def get_text(self, selector: str) -> str:
+        logger.info(f"Getting text from element with selector: {selector}")
+        text = await self.page.text_content(selector)
+        return text
 
-    async def extract_data(self, selector: str, fields: Dict[str, str], limit: int = 0) -> List[Dict[str, Any]]:
-        await self.connect()
-        logger.info(f"Extracting data from '{selector}' with limit {limit}")
-        results = []
-        elements = await self._page.query_selector_all(selector)
-        limit = int(limit)
-        if limit > 0:
-            elements = elements[:limit]
-            
-        for element in elements:
-            item_data = {}
-            for field_name, sub_selector in fields.items():
-                sub_element = await element.query_selector(sub_selector)
-                item_data[field_name] = await sub_element.inner_text() if sub_element else None
-            results.append(item_data)
-        logger.success(f"Extracted {len(results)} items.")
-        return results
+    async def take_screenshot(self, path: str):
+        logger.info(f"Taking screenshot and saving to {path}")
+        await self.page.screenshot(path=path)
+        return f"Screenshot saved to {path}"
 
-    # --- THIS IS THE FIX ---
-    # Re-instating the 'find_element' method that was unintentionally removed.
-    async def find_element(self, query: str) -> str:
-        await self.connect()
-        logger.info(f"[BROWSER] Finding element for query: '{query}'")
-        try:
-            elements = await self._get_interactive_elements()
-            if not elements: return "Error: No interactive elements found."
-            choices = {elem['description']: elem['selector'] for elem in elements}
-            best_match = process.extractOne(query, choices.keys(), score_cutoff=80)
-            if best_match:
-                selector = choices[best_match[0]]
-                logger.success(f"Found best match for '{query}': '{selector}' (Description: '{best_match[0]}')")
-                return selector
-            logger.warning(f"Could not find a suitable element for query: '{query}'")
-            return "Error: Element not found."
-        except Exception as e:
-            logger.error(f"An error occurred during find_element: {e}")
-            return f"Error: An exception occurred - {e}"
+    async def get_html(self) -> str:
+        logger.info("Getting HTML content of the page")
+        html = await self.page.content()
+        return html
 
-    # --- Additional and Specialized Tools ---
-    
-    async def scroll(self, direction: str) -> str:
-        await self.connect()
-        logger.info(f"Scrolling page {direction}")
-        if direction == "down":
-            await self._page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            await asyncio.sleep(2) # Wait for content to load after scrolling
-        else:
-            await self._page.evaluate("window.scrollTo(0, 0)")
-        return f"Scrolled {direction}"
+    async def click_coords(self, x: int, y: int):
+        logger.info(f"Clicking at coordinates: ({x}, {y})")
+        await self.page.mouse.click(x, y)
+        return f"Successfully clicked at coordinates ({x}, {y})."
 
-    async def paste(self, selector: str, text: str) -> str:
-        """Pastes text into an element."""
-        await self.connect()
-        logger.info(f"[BROWSER] Pasting clipboard content into '{selector}'")
-        await self._page.focus(selector)
+    async def type_text_coords(self, x: int, y: int, text: str):
+        logger.info(f"Typing '{text}' at coordinates: ({x}, {y})")
+        await self.page.mouse.click(x, y)
+        await self.page.keyboard.type(text)
+        return f"Successfully typed '{text}' at coordinates ({x}, {y})."
 
-        # Correct way to pass an argument to Page.evaluate
-        await self._page.evaluate("text => navigator.clipboard.writeText(text)", text)
-        
-        # A small delay is sometimes needed for clipboard to be ready on some systems
-        await asyncio.sleep(0.5) 
-        
-        modifier = "Meta" if platform.system() == "Darwin" else "Control"
-        await self._page.keyboard.press(f"{modifier}+V")
-        
-        return f"Pasted text into {selector}"
+    async def press_key(self, key: str):
+        """Simulates a single key press on the keyboard (e.g., 'Enter', 'ArrowDown')."""
+        logger.info(f"Pressing key: '{key}'")
+        await self.page.keyboard.press(key)
+        return f"Successfully pressed the '{key}' key."
 
-    async def get_page_html(self, selector: str) -> str:
-        """Gets the full inner HTML of an element specified by a selector."""
-        await self.connect()
-        logger.info(f"[BROWSER] Getting HTML for selector: '{selector}'")
-        try:
-            element = self._page.locator(selector)
-            # Increase the timeout to 30 seconds to handle slow network conditions.
-            html_content = await element.inner_html(timeout=30000)
-            return f"<html><body>{html_content}</body></html>"
-        except Exception as e:
-            logger.error(f"Could not get HTML for selector '{selector}': {e}")
-            return f"Error: Could not get HTML. {e}"
-
-    async def wait(self, seconds: int) -> str:
-        """Pauses execution for a specified number of seconds."""
-        logger.info(f"Waiting for {seconds} second(s)...")
-        # add random delta 
-        import random
-        delta = random.randint(1, 2)
-        seconds += delta
-        await asyncio.sleep(seconds)
-        return f"Successfully waited for {seconds} second(s)."
-
-    async def get_activity_post_details(self, post_selector: str) -> Dict[str, Any]:
-        """Gets specific details from a single activity post using predefined selectors."""
-        await self.connect()
-        logger.info(f"[BROWSER] Getting details for post: '{post_selector}'")
-        try:
-            # Locate the main post container
-            post_element = self._page.locator(post_selector).first
-
-            # Define the inner selectors
-            author_selector = '.update-components-actor__name'
-            text_selector = '.update-components-update-content__text-paragraph'
-            likes_selector = '.social-details-social-counts__reactions-count'
-            
-            # We need to explicitly wait for the author element to be visible
-            # as a signal that the inner content has fully loaded.
-            author_locator = post_element.locator(author_selector)
-            await author_locator.wait_for(state="visible", timeout=30000)
-
-            # Extract the data from the child elements
-            author = await author_locator.inner_text()
-            text = await post_element.locator(text_selector).inner_text()
-            
-            # Likes may not always be present, so we'll handle the potential exception
-            likes_count = "0"
-            try:
-                likes_count = await post_element.locator(likes_selector).first.inner_text(timeout=5000)
-            except Exception:
-                pass # No likes element found
-
-            return {
-                "author": author.strip(),
-                "text": text.strip(),
-                "likes": likes_count.strip(),
-            }
-
-        except Exception as e:
-            logger.error(f"Failed to get post details for '{post_selector}': {e}")
-            return {"author": "Error", "text": str(e), "likes": "Error"}
-    async def paste_image(self, selector: str) -> str:
-        """
-        Pastes an image from the system clipboard into a specified element.
-        This works by simulating a paste keyboard shortcut.
-        """
-        await self.connect()
-        logger.info(f"[BROWSER] Pasting image from clipboard into '{selector}'")
-        
-        try:
-            await self._page.focus(selector)
-            modifier = "Meta" if platform.system() == "Darwin" else "Control"
-            await self._page.keyboard.press(f"{modifier}+V")
-            
-            return f"Pasted image into {selector}"
-
-        except Exception as e:
-            logger.error(f"Failed to paste image: {e}")
-            return f"Error: Failed to paste image. {e}"
-
-    async def press_key(self, key: str) -> str:
-        """
-        Simulates a single key press on the keyboard.
-        This method automatically corrects the case of modifier keys
-        (e.g., 'alt' to 'Alt').
-        
-        Args:
-            key (str): The key to press, e.g., 'Enter', 'Alt+a', 'Control+C'.
-        """
-        await self.connect()
-        logger.info(f"[BROWSER] Received key press request: '{key}'")
-
-        # Define lowercase modifier keys that need capitalization
-        modifiers = ['alt', 'control', 'meta', 'shift']
-        
-        # Correct the capitalization of modifiers
-        key_parts = key.split('+')
-        corrected_parts = [
-            part.capitalize() if part.lower() in modifiers else part 
-            for part in key_parts
+    @classmethod
+    def get_tools(cls) -> List[dict]:
+        return [
+            {
+                "name": "navigate",
+                "description": "Navigates the browser to a specified URL.",
+                "parameters": {"type": "OBJECT", "properties": {"url": {"type": "STRING"}}, "required": ["url"]},
+            },
+            {
+                "name": "click",
+                "description": "Clicks on an element specified by a CSS selector.",
+                "parameters": {"type": "OBJECT", "properties": {"selector": {"type": "STRING"}}, "required": ["selector"]},
+            },
+            {
+                "name": "type_text",
+                "description": "Types text into an element specified by a CSS selector.",
+                "parameters": {"type": "OBJECT", "properties": {"selector": {"type": "STRING"}, "text": {"type": "STRING"}}, "required": ["selector", "text"]},
+            },
+            {
+                "name": "click_coords",
+                "description": "Clicks on a specific (x, y) coordinate.",
+                "parameters": {"type": "OBJECT", "properties": {"x": {"type": "INTEGER"}, "y": {"type": "INTEGER"}}, "required": ["x", "y"]},
+            },
+            {
+                "name": "type_text_coords",
+                "description": "Types text at a specific (x, y) coordinate.",
+                "parameters": {"type": "OBJECT", "properties": {"x": {"type": "INTEGER"}, "y": {"type": "INTEGER"}, "text": {"type": "STRING"}}, "required": ["x", "y", "text"]},
+            },
+            {
+                "name": "press_key",
+                "description": "Simulates a single key press on the keyboard (e.g., 'Enter').",
+                "parameters": {"type": "OBJECT", "properties": {"key": {"type": "STRING", "description": "The key to press, e.g., 'Enter', 'ArrowDown'."}}, "required": ["key"]},
+            },
         ]
-        corrected_key = '+'.join(corrected_parts)
-        
-        # Log if a correction was made
-        if key != corrected_key:
-            logger.info(f"Corrected key to '{corrected_key}' for Playwright API.")
-
-        try:
-            await self._page.keyboard.press(corrected_key)
-            return f"Successfully pressed the '{key}' key."
-        except Exception as e:
-            logger.error(f"Failed to press key '{key}' (used '{corrected_key}'): {e}")
-            return f"Error: Failed to press key '{key}'. {e}"
