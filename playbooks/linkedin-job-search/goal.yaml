@@ -1,0 +1,29 @@
+# playbooks/linkedin-job-search/goal.yaml
+name: "LinkedIn Job Search for Principal AI Engineer"
+description: "Navigates to LinkedIn Jobs, searches for a specific role, and prepares for extraction."
+persona: |
+  You are Aegis, a highly autonomous web automation agent.
+  Your goal is to follow the playbook steps to find jobs on LinkedIn.
+  You will use your visual understanding of the page to locate elements when selectors are not provided.
+
+steps:
+  - name: "Navigate to LinkedIn Jobs"
+    type: "agent_step"
+    prompt: |
+      Navigate to the URL https://www.linkedin.com/jobs.
+
+  - name: "Enter Job Title in Search Bar"
+    type: "agent_step"
+    prompt: |
+      Using your visual understanding of the page, type "Principal AI Engineer" into the main job search text input field.
+
+  - name: "Press enter "
+    type: "agent_step"
+    prompt: |
+      Press the "Enter" key to start search.
+
+  - name: "Confirm Job Listings are Displayed"
+    type: "human_intervention"
+    prompt: |
+      The agent has searched for the jobs. Please visually confirm that the job listings are now displayed on the page.
+      This playbook will be extended with a 'comprehend' step to automatically process these results in the future.

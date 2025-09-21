@@ -23,3 +23,10 @@ browser:
 opa:
   provider: "noop" # Can be "http" or "noop"
   url: "http://localhost:8181/v1/data/aegis/allow"
+
+# OmniParser "Eyes" config
+omni_parser_adapter:
+  script_path: "scripts/omni_parser.test.py"
+  workdir: "scripts/workdir" # Directory where models and outputs are stored
+
+
