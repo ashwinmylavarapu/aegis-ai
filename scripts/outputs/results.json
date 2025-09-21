@@ -1,0 +1,449 @@
+{
+  "image": "1.png",
+  "num_detections": 34,
+  "detections": [
+    {
+      "xyxy": [
+        292.1218566894531,
+        56.498775482177734,
+        501.8353271484375,
+        99.0030746459961
+      ],
+      "conf": 0.8859305381774902,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A white button with the words title, skill or company on it."
+    },
+    {
+      "xyxy": [
+        1204.24609375,
+        51.205318450927734,
+        1309.194580078125,
+        102.55487823486328
+      ],
+      "conf": 0.8456316590309143,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A button that says \"For Business\" on it."
+    },
+    {
+      "xyxy": [
+        506.06793212890625,
+        55.59505844116211,
+        717.9102172851562,
+        99.4315185546875
+      ],
+      "conf": 0.8402056097984314,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A white button that says United Kingdom on it."
+    },
+    {
+      "xyxy": [
+        965.3857421875,
+        53.385284423828125,
+        1038.984619140625,
+        105.75666046142578
+      ],
+      "conf": 0.8378163576126099,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A white sign with a black and white image of a chat bubble and the words \"Messaging\""
+    },
+    {
+      "xyxy": [
+        883.3635864257812,
+        52.893104553222656,
+        962.9154663085938,
+        107.57044219970703
+      ],
+      "conf": 0.8330955505371094,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A picture of a pot with the word jobs below it."
+    },
+    {
+      "xyxy": [
+        798.9525756835938,
+        52.477149963378906,
+        884.0918579101562,
+        106.32460021972656
+      ],
+      "conf": 0.8295578360557556,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A sign that says My Network with a picture of people."
+    },
+    {
+      "xyxy": [
+        1132.4288330078125,
+        51.264671325683594,
+        1187.320068359375,
+        104.98941040039062
+      ],
+      "conf": 0.8256378173828125,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A picture of a man with the word me below it."
+    },
+    {
+      "xyxy": [
+        1039.2139892578125,
+        52.57866668701172,
+        1123.249755859375,
+        104.52157592773438
+      ],
+      "conf": 0.824529230594635,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A sign that says Notifications and has a car on it."
+    },
+    {
+      "xyxy": [
+        250.15008544921875,
+        58.8188362121582,
+        293.77349853515625,
+        99.04084777832031
+      ],
+      "conf": 0.81843101978302,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A blue icon with the letter \"n\" on it."
+    },
+    {
+      "xyxy": [
+        736.6295776367188,
+        51.68220520019531,
+        788.8612060546875,
+        105.22683715820312
+      ],
+      "conf": 0.8007498979568481,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "home logo with a house and a red circle"
+    },
+    {
+      "xyxy": [
+        591.9227294921875,
+        959.9725341796875,
+        651.5256958007812,
+        1025.4044189453125
+      ],
+      "conf": 0.7945976853370667,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A green flower with a yellow center on a white background."
+    },
+    {
+      "xyxy": [
+        593.334716796875,
+        318.7782897949219,
+        655.3321533203125,
+        379.0277099609375
+      ],
+      "conf": 0.7621337175369263,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A black square with a pink triangle in the middle."
+    },
+    {
+      "xyxy": [
+        1310.368896484375,
+        54.751312255859375,
+        1374.5318603515625,
+        101.4432601928711
+      ],
+      "conf": 0.743811309337616,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A white sign that says learning on it."
+    },
+    {
+      "xyxy": [
+        1583.619873046875,
+        1140.4354248046875,
+        1614.9971923828125,
+        1169.8455810546875
+      ],
+      "conf": 0.734933078289032,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "(caption_skipped: Crop too small 31x29)"
+    },
+    {
+      "xyxy": [
+        260.9969482421875,
+        438.1221618652344,
+        528.8905639648438,
+        487.6125183105469
+      ],
+      "conf": 0.7340139150619507,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A black and white image with the words My Jobs on it."
+    },
+    {
+      "xyxy": [
+        593.7161254882812,
+        1070.59912109375,
+        655.4817504882812,
+        1131.5977783203125
+      ],
+      "conf": 0.7322250604629517,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A blue sign that says Roche on it."
+    },
+    {
+      "xyxy": [
+        593.5094604492188,
+        427.7890930175781,
+        654.8490600585938,
+        489.4978332519531
+      ],
+      "conf": 0.7236574292182922,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A square shaped brown square with the letters JPMC in the middle."
+    },
+    {
+      "xyxy": [
+        1318.92529296875,
+        425.66119384765625,
+        1353.98388671875,
+        460.7956237792969
+      ],
+      "conf": 0.7029202580451965,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A picture of a cross with a white background."
+    },
+    {
+      "xyxy": [
+        591.9732666015625,
+        210.4939727783203,
+        654.9595336914062,
+        270.9439392089844
+      ],
+      "conf": 0.6970993876457214,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "a green square with the letter 7 on it"
+    },
+    {
+      "xyxy": [
+        1310.154541015625,
+        906.6810913085938,
+        1355.118408203125,
+        954.176513671875
+      ],
+      "conf": 0.6260091662406921,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A black and white image of a piece of metal."
+    },
+    {
+      "xyxy": [
+        258.95208740234375,
+        387.35662841796875,
+        533.716064453125,
+        438.6804504394531
+      ],
+      "conf": 0.591097891330719,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A black and white image with the word preferences on it."
+    },
+    {
+      "xyxy": [
+        1318.9725341796875,
+        316.0936279296875,
+        1354.486328125,
+        354.3198547363281
+      ],
+      "conf": 0.5691970586776733,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A black and white image of a cross."
+    },
+    {
+      "xyxy": [
+        1316.226806640625,
+        204.24876403808594,
+        1357.2103271484375,
+        247.77389526367188
+      ],
+      "conf": 0.543089747428894,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A black x symbol on a white background."
+    },
+    {
+      "xyxy": [
+        1553.3282470703125,
+        1138.997314453125,
+        1581.836181640625,
+        1170.173583984375
+      ],
+      "conf": 0.504901111125946,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "(caption_skipped: Crop too small 28x32)"
+    },
+    {
+      "xyxy": [
+        1317.07568359375,
+        1067.1761474609375,
+        1354.5526123046875,
+        1105.6212158203125
+      ],
+      "conf": 0.4800471067428589,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A picture of a cross with a black border."
+    },
+    {
+      "xyxy": [
+        1315.1517333984375,
+        955.8822021484375,
+        1356.6038818359375,
+        997.9292602539062
+      ],
+      "conf": 0.47639375925064087,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A picture of a cross with a black border."
+    },
+    {
+      "xyxy": [
+        1332.6732177734375,
+        1131.619140625,
+        1471.04052734375,
+        1172.0
+      ],
+      "conf": 0.3734457194805145,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A white card with a man's face and the words messaging on it."
+    },
+    {
+      "xyxy": [
+        1332.140380859375,
+        1131.687744140625,
+        1375.417236328125,
+        1172.0
+      ],
+      "conf": 0.37118247151374817,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A man is smiling in a mirror."
+    },
+    {
+      "xyxy": [
+        260.8974914550781,
+        486.2262268066406,
+        529.3956909179688,
+        533.83642578125
+      ],
+      "conf": 0.3664782643318176,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A black and white image with the words my career insights."
+    },
+    {
+      "xyxy": [
+        825.403076171875,
+        962.6842651367188,
+        843.2601928710938,
+        983.9547119140625
+      ],
+      "conf": 0.345791757106781,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "(caption_skipped: Crop too small 18x21)"
+    },
+    {
+      "xyxy": [
+        250.49685668945312,
+        134.53076171875,
+        548.6281127929688,
+        351.4280090332031
+      ],
+      "conf": 0.33386027812957764,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "A web page with a profile of a man and the title \"Ashwin Mylavarapu\"."
+    },
+    {
+      "xyxy": [
+        1515.6175537109375,
+        1136.814208984375,
+        1550.2197265625,
+        1171.1375732421875
+      ],
+      "conf": 0.2906029522418976,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "unanswerable"
+    },
+    {
+      "xyxy": [
+        1008.197509765625,
+        1071.0703125,
+        1026.8759765625,
+        1093.978515625
+      ],
+      "conf": 0.27345141768455505,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "(caption_skipped: Crop too small 18x22)"
+    },
+    {
+      "xyxy": [
+        661.049072265625,
+        1119.0802001953125,
+        682.8004150390625,
+        1138.76708984375
+      ],
+      "conf": 0.25544068217277527,
+      "cls": 0,
+      "ocr_text": "",
+      "ocr_score": 0.0,
+      "caption": "(caption_skipped: Crop too small 21x19)"
+    }
+  ],
+  "ocr_items": []
+}

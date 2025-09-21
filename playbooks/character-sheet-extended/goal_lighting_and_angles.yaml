@@ -6,7 +6,6 @@ tasks:
     prompt: |
       Your goal is to generate five distinct images with dramatic lighting.
       You MUST call the `finish_task` tool immediately after the fifth image generation is complete.
-      NOTE: You should already be on the correct page.
 
       # Image 1: Harsh Midday Sun
       1. Paste a straight, full length reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
@@ -20,14 +19,17 @@ tasks:
       # Image 3: Neon Noir
       6. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Full length shot. Night time. Lit by vibrant, colorful neon signs from a city storefront. Reflective puddles on the ground. She has a mysterious expression."
       7. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
-      
-      # Image 4: Moonlight
-      8. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Full length shot. Backlit by a full moon. Cool, blue-toned light. A silhouette effect with some rim lighting on her hair and shoulders. Background is a quiet forest clearing."
-      9. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
-      
+
       # Image 5: Overcast Day
-      10. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Full length shot. Soft, diffused light from an overcast day. No harsh shadows. She is holding a book and looks thoughtful. Background is a university campus."
-      11. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+      8. Paste a straight, waist-up reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
+      9. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Full length shot. Soft, diffused light from an overcast day. No harsh shadows. She is holding a book and looks thoughtful. Background is a university campus."
+      10. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+    
+      # Image 4: Moonlight
+      11. Paste a straight, waist-up reference image using `paste_image` with selector `div.ql-editor[role="textbox"]`.
+      12. Use `type_text` with selector `div.ql-editor[role="textbox"]` to enter: "Full length shot. Backlit by a full moon. Cool, blue-toned light. A silhouette effect with some rim lighting on her hair and shoulders. Background is a quiet forest clearing."
+      13. Click the send button with selector `button[aria-label="Send message"]` and wait for 60 seconds.
+      
 
   - name: "Task 2: Varied Camera Angles - Waist Up"
     prompt: |
