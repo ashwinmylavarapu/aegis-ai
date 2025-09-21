@@ -1,13 +1,10 @@
 # requirements.txt
-# Core dependencies
 PyYAML
 google-generativeai
 playwright
 asyncio
 loguru
 openai
-
-# OmniParser and Vision Model Dependencies
 torch
 torchvision
 ultralytics
@@ -18,3 +15,4 @@ opencv-python
 pytesseract
 paddleocr
 tqdm
+pyperclip

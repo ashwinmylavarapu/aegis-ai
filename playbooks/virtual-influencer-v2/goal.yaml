@@ -1,0 +1,188 @@
+name: "Virtual Influencer Dataset Generation v2"
+description: "Generate a dataset of images for a virtual influencer using a character reference and iterative commands."
+persona: |
+  You are Aegis, a web automation agent. Your goal is to follow the playbook steps precisely to generate a series of images. You will use the tools provided to interact with the web page based on the explicit instructions in each step.
+
+steps:
+  # --- Task 1: Generate Straight Profile Headshots ---
+  - name: "Task 1 - Step 1: Navigate to Generator"
+    type: "agent_step"
+    prompt: "Navigate to https:///gemini.google.com/u/2/app"
+  - name: "Task 1 - Step 2: Paste Reference Image (Casual)"
+    type: "agent_step"
+    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
+  - name: "Task 1 - Step 3: Set Casual Prompt"
+    type: "agent_step"
+    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change attire to a t-shirt and jeans. Change background to home. Set evening light."'
+  - name: "Task 1 - Step 4: Click Send"
+    type: "agent_step"
+    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
+  - name: "Task 1 - Step 5: Wait for Generation"
+    type: "agent_step"
+    prompt: "Use the `wait` tool for 60 seconds."
+  - name: "Task 1 - Step 6: Set Party Prompt"
+    type: "agent_step"
+    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change attire to party wear. Set home dimlit. Make her waving."'
+  - name: "Task 1 - Step 7: Click Send"
+    type: "agent_step"
+    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
+  - name: "Task 1 - Step 8: Wait for Generation"
+    type: "agent_step"
+    prompt: "Use the `wait` tool for 60 seconds."
+  - name: "Task 1 - Human Verification"
+    type: "human_intervention"
+    prompt: "Task 1 (Headshots) is complete. Please verify the two generated images before proceeding."
+
+  # --- Task 5: Generate Dynamic and Beach Poses ---
+  - name: "Task 5 - Step 1: Paste Reference Image (Running)"
+    type: "agent_step"
+    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
+  - name: "Task 5 - Step 2: Set Running Prompt"
+    type: "agent_step"
+    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Make her running. Change attire to athletic wear. Change background to an adventure scene."'
+  - name: "Task 5 - Step 3: Click Send"
+    type: "agent_step"
+    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
+  - name: "Task 5 - Step 4: Wait for Generation"
+    type: "agent_step"
+    prompt: "Use the `wait` tool for 60 seconds."
+  - name: "Task 5 - Step 5: Paste Reference Image (Beach)"
+    type: "agent_step"
+    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
+  - name: "Task 5 - Step 6: Set Beach Prompt"
+    type: "agent_step"
+    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change background to a beach. Change attire to 2 piece beachwear. Make her sitting on a towel. Set dawn lighting."'
+  - name: "Task 5 - Step 7: Click Send"
+    type: "agent_step"
+    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
+  - name: "Task 5 - Step 8: Wait for Generation"
+    type: "agent_step"
+    prompt: "Use the `wait` tool for 60 seconds."
+  - name: "Task 5 - Human Verification"
+    type: "human_intervention"
+    prompt: "Task 5 (Dynamic Poses) is complete. Please verify the two generated images before proceeding."
+
+  # --- Task 6: Generate Final Back Profile Shots ---
+  - name: "Task 6 - Step 1: Paste Reference Image (Back Profile)"
+    type: "agent_step"
+    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
+  - name: "Task 6 - Step 2: Set Back Profile Prompt"
+    type: "agent_step"
+    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Make it a back profile. Make her in a dynamic running pose. Change attire to a t-shirt and jeans. Change background to an adventure scene."'
+  - name: "Task 6 - Step 3: Click Send"
+    type: "agent_step"
+    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
+  - name: "Task 6 - Step 4: Wait for Generation"
+    type: "agent_step"
+    prompt: "Use the `wait` tool for 60 seconds."
+  - name: "Task 6 - Step 5: Set Saree Prompt"
+    type: "agent_step"
+    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Make it a back profile. Change attire to a saree. Set evening light. Change background to a park."'
+  - name: "Task 6 - Step 6: Click Send"
+    type: "agent_step"
+    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
+  - name: "Task 6 - Step 7: Wait for Generation"
+    type: "agent_step"
+    prompt: "Use the `wait` tool for 60 seconds."
+  - name: "Task 6 - Human Verification"
+    type: "human_intervention"
+    prompt: "Task 6 (Back Profile Shots) is complete. Please verify the two generated images before proceeding."
+
+  # --- Task 2: Generate Side Profile Shots with Different Emotions ---
+  - name: "Task 2 - Step 1: Paste Reference Image (Annoyed)"
+    type: "agent_step"
+    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
+  - name: "Task 2 - Step 2: Set Annoyed Prompt"
+    type: "agent_step"
+    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to frontal view profile head shot. Change background to a park. Make her look annoyed."'
+  - name: "Task 2 - Step 3: Click Send"
+    type: "agent_step"
+    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
+  - name: "Task 2 - Step 4: Wait for Generation"
+    type: "agent_step"
+    prompt: "Use the `wait` tool for 60 seconds."
+  - name: "Task 2 - Step 5: Set Sad Prompt"
+    type: "agent_step"
+    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to frontal view profile head shot. Make her look sad."'
+  - name: "Task 2 - Step 6: Click Send"
+    type: "agent_step"
+    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
+  - name: "Task 2 - Step 7: Wait for Generation"
+    type: "agent_step"
+    prompt: "Use the `wait` tool for 60 seconds."
+  - name: "Task 2 - Step 8: Set Amused Prompt"
+    type: "agent_step"
+    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to frontal view profile head shot. Change background to a park. Make her look amused."'
+  - name: "Task 2 - Step 9: Click Send"
+    type: "agent_step"
+    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
+  - name: "Task 2 - Step 10: Wait for Generation"
+    type: "agent_step"
+    prompt: "Use the `wait` tool for 60 seconds."
+  - name: "Task 2 - Human Verification"
+    type: "human_intervention"
+    prompt: "Task 2 (Emotions) is complete. Please verify the three generated images before proceeding."
+
+  # --- Task 3: Generate Full Length Poses (Yoga and Office) ---
+  - name: "Task 3 - Step 1: Paste Reference Image (Yoga)"
+    type: "agent_step"
+    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
+  - name: "Task 3 - Step 2: Set Yoga Prompt"
+    type: "agent_step"
+    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Make it a dynamic yoga pose. Change background to home. Make her smiling."'
+  - name: "Task 3 - Step 3: Click Send"
+    type: "agent_step"
+    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
+  - name: "Task 3 - Step 4: Wait for Generation"
+    type: "agent_step"
+    prompt: "Use the `wait` tool for 60 seconds."
+  - name: "Task 3 - Step 5: Paste Reference Image (Office)"
+    type: "agent_step"
+    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
+  - name: "Task 3 - Step 6: Set Office Prompt"
+    type: "agent_step"
+    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change attire to formal wear. Change background to an office. Make her shrugging."'
+  - name: "Task 3 - Step 7: Click Send"
+    type: "agent_step"
+    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
+  - name: "Task 3 - Step 8: Wait for Generation"
+    type: "agent_step"
+    prompt: "Use the `wait` tool for 60 seconds."
+  - name: "Task 3 - Human Verification"
+    type: "human_intervention"
+    prompt: "Task 3 (Full Length Poses) is complete. Please verify the two generated images before proceeding."
+
+  # --- Task 4: Generate Back Profile and Waist Length Shots ---
+  - name: "Task 4 - Step 1: Paste Reference Image (Crying)"
+    type: "agent_step"
+    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
+  - name: "Task 4 - Step 2: Set Crying Prompt"
+    type: "agent_step"
+    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Show a crying emotion. Change background to a park."'
+  - name: "Task 4 - Step 3: Click Send"
+    type: "agent_step"
+    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
+  - name: "Task 4 - Step 4: Wait for Generation"
+    type: "agent_step"
+    prompt: "Use the `wait` tool for 60 seconds."
+  - name: "Task 4 - Step 5: Set Saree Prompt"
+    type: "agent_step"
+    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Make it a waist length shot. Change attire to a saree. Change background to a park. Show a happy emotion. Make her standing."'
+  - name: "Task 4 - Step 6: Click Send"
+    type: "agent_step"
+    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
+  - name: "Task 4 - Step 7: Wait for Generation"
+    type: "agent_step"
+    prompt: "Use the `wait` tool for 60 seconds."
+  - name: "Task 4 - Step 8: Set Kurta Prompt"
+    type: "agent_step"
+    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change attire to a kurta. Change background to a cafe. Make her sitting."'
+  - name: "Task 4 - Step 9: Click Send"
+    type: "agent_step"
+    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
+  - name: "Task 4 - Step 10: Wait for Generation"
+    type: "agent_step"
+    prompt: "Use the `wait` tool for 60 seconds."
+  - name: "Task 4 - Human Verification"
+    type: "human_intervention"
+    prompt: "Task 4 (Waist Length Shots) is complete. Please verify the three generated images."

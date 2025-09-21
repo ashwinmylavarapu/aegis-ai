@@ -2,6 +2,7 @@
 import asyncio
 import os
 from datetime import datetime
+import json
 
 from loguru import logger
 
@@ -14,6 +15,12 @@ from aegis.core.context_manager import ContextManager
 from aegis.core.models import AegisContext, Playbook, Step, ToolCall, ToolResponse, Message
 from aegis.skills import linkedin
 
+def step_requires_vision(step: Step) -> bool:
+    if step.type != "agent_step":
+        return False
+    prompt_lower = step.prompt.lower().strip()
+    non_visual_keywords = ["navigate to", "selector", "wait for", "paste_image", "type_text", "click"]
+    return not any(keyword in prompt_lower for keyword in non_visual_keywords)
 
 class Orchestrator:
     def __init__(self, config):
@@ -26,114 +33,80 @@ class Orchestrator:
     async def execute_playbook(self, playbook: Playbook):
         aegis_context = self.context_manager.create_context(playbook)
         logger.info(f"Executing playbook: {playbook.name}")
+        logger.debug(f"Playbook full definition: {playbook.model_dump_json(indent=2)}")
 
-        for step in playbook.steps:
+
+        for i, step in enumerate(playbook.steps):
+            logger.info(f"--- Starting Step {i+1}/{len(playbook.steps)}: '{step.name}' ---")
             aegis_context.current_step = step
             if step.type == "human_intervention":
                 self.handle_human_intervention(step)
-            elif step.type == "agent_step":
-                await self.agent_step(aegis_context, step)
-            elif step.type == "skill_step":
-                await self.skill_step(step, aegis_context)
+            elif step.type in ["agent_step", "skill_step"]:
+                await self.execute_step(aegis_context, step)
             else:
                 logger.warning(f"Unknown step type: {step.type}")
         return aegis_context
 
-    async def agent_step(self, aegis_context: AegisContext, step: Step):
-        logger.info(f"Executing agent step: {step.name}")
+    async def execute_step(self, aegis_context: AegisContext, step: Step):
+        logger.debug(f"Executing step '{step.name}' of type '{step.type}'")
+        if step.type == "skill_step":
+            await self.skill_step(step, aegis_context)
+            return
 
-        screenshot_dir = os.path.join(os.getcwd(), "screenshots")
-        os.makedirs(screenshot_dir, exist_ok=True)
-        screenshot_filename = (
-            f"screenshot_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
-        )
-        screenshot_path = os.path.join(screenshot_dir, screenshot_filename)
+        use_vision = step_requires_vision(step)
+        logger.debug(f"Step '{step.name}' requires vision: {use_vision}")
 
-        try:
-            await self.browser_adapter.take_screenshot(screenshot_path)
-            logger.info(f"Screenshot taken: {screenshot_path}")
+        if use_vision:
+            logger.info("Vision mode enabled for this step.")
+            # ... (vision logic will go here)
+        else:
+            logger.debug("Bypassing observation for non-visual step.")
 
-            visual_elements = await self.omni_parser_adapter.see_the_page(
-                screenshot_path
-            )
-            logger.info(f"OmniParser identified {len(visual_elements)} elements.")
-
-            if visual_elements:
-                visual_prompt_snippet = "\n\n# Visible Elements On Page\n"
-                formatted_elements = []
-                for el in visual_elements:
-                    ocr = f" It contains the text: '{el.get('ocr_text', 'N/A')}'. " if el.get('ocr_text') else ""
-                    formatted_elements.append(
-                        f"- **{el['element_id']}**: A '{el.get('label')}' described as '{el.get('caption', 'N/A')}'."
-                        f"{ocr}"
-                        f"Location: {el.get('xyxy')}."
-                    )
-                visual_prompt_snippet += "\n".join(formatted_elements)
-                step.prompt += visual_prompt_snippet
-            else:
-                logger.warning("No visual elements were detected by OmniParser.")
-
-        except Exception as e:
-            logger.error(f"Failed to perform visual analysis: {e}")
-            pass
-
+        logger.debug(f"Adding user message to context for step '{step.name}':\n{step.prompt}")
         aegis_context.add_message(role="user", content=step.prompt)
+        
+        logger.debug("Sending context to LLM...")
         response_message = await self.llm_adapter.chat_completion(aegis_context.messages)
-
-        # Add the assistant's response (thoughts + tool calls) to context
+        
+        logger.debug(f"Received LLM response: {response_message.model_dump_json(indent=2)}")
         aegis_context.messages.append(response_message)
 
         if response_message.tool_calls:
             await self.handle_tool_calls(response_message.tool_calls, aegis_context)
+        else:
+            logger.debug("LLM response contained no tool calls.")
 
     def handle_human_intervention(self, step: Step):
         logger.info(f"Human intervention required: {step.prompt}")
         input("Press Enter to continue...")
 
     async def skill_step(self, step, aegis_context: AegisContext):
-        # ... (skill step logic remains the same)
+        logger.debug(f"Executing skill '{step.skill_name}.{step.function_name}' with params: {step.params}")
+        # ... (actual skill execution logic)
         pass
 
     async def handle_tool_calls(self, tool_calls: list[ToolCall], aegis_context: AegisContext):
+        logger.debug(f"Handling {len(tool_calls)} tool calls...")
         tool_responses = []
-        for tool_call in tool_calls:
-            tool_name = tool_call.function_name
-            tool_args = tool_call.function_args
-            tool_found = False
-
-            if hasattr(self.browser_adapter, tool_name):
-                tool_function = getattr(self.browser_adapter, tool_name)
-                tool_found = True
-            
-            if tool_found:
+        for call in tool_calls:
+            logger.debug(f"Executing tool: {call.function_name} with args: {call.function_args}")
+            if hasattr(self.browser_adapter, call.function_name):
+                tool_function = getattr(self.browser_adapter, call.function_name)
                 try:
-                    result = await tool_function(**tool_args)
+                    result = await tool_function(**call.function_args)
                     tool_responses.append(
-                        ToolResponse(
-                            tool_call_id=tool_call.id,
-                            tool_name=tool_name,
-                            content=str(result) if result is not None else "Success",
-                        )
+                        ToolResponse(tool_call_id=call.id, tool_name=call.function_name, content=str(result) or "Success")
                     )
                 except Exception as e:
-                    logger.error(f"Error executing tool '{tool_name}': {e}")
+                    logger.error(f"Error executing tool '{call.function_name}': {e}")
                     tool_responses.append(
-                        ToolResponse(
-                            tool_call_id=tool_call.id,
-                            tool_name=tool_name,
-                            content=f"Error: {e}",
-                        )
+                        ToolResponse(tool_call_id=call.id, tool_name=call.function_name, content=f"Error: {e}")
                     )
             else:
-                logger.warning(f"Tool '{tool_name}' not found.")
+                logger.warning(f"Tool '{call.function_name}' not found in browser adapter.")
                 tool_responses.append(
-                    ToolResponse(
-                        tool_call_id=tool_call.id,
-                        tool_name=tool_name,
-                        content="Error: Tool not found.",
-                    )
+                    ToolResponse(tool_call_id=call.id, tool_name=call.function_name, content="Error: Tool not found")
                 )
-
-        # Add all tool responses in a single message to the context.
-        # This is the end of the current agent step. The orchestrator loop will now proceed.
+        
+        logger.debug(f"Adding tool responses to context:\n{json.dumps([tr.model_dump() for tr in tool_responses], indent=2)}")
         aegis_context.add_message(role="tool", content="", tool_responses=tool_responses)
