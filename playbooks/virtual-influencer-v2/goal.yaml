@@ -7,10 +7,10 @@ steps:
   # --- Task 1: Generate Straight Profile Headshots ---
   - name: "Task 1 - Step 1: Navigate to Generator"
     type: "agent_step"
-    prompt: "Navigate to https:///gemini.google.com/u/2/app"
+    prompt: "Navigate to https://gemini.google.com/u/2/app"
   - name: "Task 1 - Step 2: Paste Reference Image (Casual)"
     type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
+    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`'
   - name: "Task 1 - Step 3: Set Casual Prompt"
     type: "agent_step"
     prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change attire to a t-shirt and jeans. Change background to home. Set evening light."'
@@ -29,64 +29,9 @@ steps:
   - name: "Task 1 - Step 8: Wait for Generation"
     type: "agent_step"
     prompt: "Use the `wait` tool for 60 seconds."
-  - name: "Task 1 - Human Verification"
+  - name: "Task - Human Verification"
     type: "human_intervention"
-    prompt: "Task 1 (Headshots) is complete. Please verify the two generated images before proceeding."
-
-  # --- Task 5: Generate Dynamic and Beach Poses ---
-  - name: "Task 5 - Step 1: Paste Reference Image (Running)"
-    type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
-  - name: "Task 5 - Step 2: Set Running Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Make her running. Change attire to athletic wear. Change background to an adventure scene."'
-  - name: "Task 5 - Step 3: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 5 - Step 4: Wait for Generation"
-    type: "agent_step"
-    prompt: "Use the `wait` tool for 60 seconds."
-  - name: "Task 5 - Step 5: Paste Reference Image (Beach)"
-    type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
-  - name: "Task 5 - Step 6: Set Beach Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change background to a beach. Change attire to 2 piece beachwear. Make her sitting on a towel. Set dawn lighting."'
-  - name: "Task 5 - Step 7: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 5 - Step 8: Wait for Generation"
-    type: "agent_step"
-    prompt: "Use the `wait` tool for 60 seconds."
-  - name: "Task 5 - Human Verification"
-    type: "human_intervention"
-    prompt: "Task 5 (Dynamic Poses) is complete. Please verify the two generated images before proceeding."
-
-  # --- Task 6: Generate Final Back Profile Shots ---
-  - name: "Task 6 - Step 1: Paste Reference Image (Back Profile)"
-    type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
-  - name: "Task 6 - Step 2: Set Back Profile Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Make it a back profile. Make her in a dynamic running pose. Change attire to a t-shirt and jeans. Change background to an adventure scene."'
-  - name: "Task 6 - Step 3: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 6 - Step 4: Wait for Generation"
-    type: "agent_step"
-    prompt: "Use the `wait` tool for 60 seconds."
-  - name: "Task 6 - Step 5: Set Saree Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Make it a back profile. Change attire to a saree. Set evening light. Change background to a park."'
-  - name: "Task 6 - Step 6: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 6 - Step 7: Wait for Generation"
-    type: "agent_step"
-    prompt: "Use the `wait` tool for 60 seconds."
-  - name: "Task 6 - Human Verification"
-    type: "human_intervention"
-    prompt: "Task 6 (Back Profile Shots) is complete. Please verify the two generated images before proceeding."
+    prompt: "Change to Task  Please verify the generated images."
 
   # --- Task 2: Generate Side Profile Shots with Different Emotions ---
   - name: "Task 2 - Step 1: Paste Reference Image (Annoyed)"
@@ -119,9 +64,9 @@ steps:
   - name: "Task 2 - Step 10: Wait for Generation"
     type: "agent_step"
     prompt: "Use the `wait` tool for 60 seconds."
-  - name: "Task 2 - Human Verification"
+  - name: "Task - Human Verification"
     type: "human_intervention"
-    prompt: "Task 2 (Emotions) is complete. Please verify the three generated images before proceeding."
+    prompt: "Change to Task  Please verify the generated images."
 
   # --- Task 3: Generate Full Length Poses (Yoga and Office) ---
   - name: "Task 3 - Step 1: Paste Reference Image (Yoga)"
@@ -148,9 +93,9 @@ steps:
   - name: "Task 3 - Step 8: Wait for Generation"
     type: "agent_step"
     prompt: "Use the `wait` tool for 60 seconds."
-  - name: "Task 3 - Human Verification"
+  - name: "Task - Human Verification"
     type: "human_intervention"
-    prompt: "Task 3 (Full Length Poses) is complete. Please verify the two generated images before proceeding."
+    prompt: "Change to Task  Please verify the generated images."
 
   # --- Task 4: Generate Back Profile and Waist Length Shots ---
   - name: "Task 4 - Step 1: Paste Reference Image (Crying)"
@@ -186,3 +131,6 @@ steps:
   - name: "Task 4 - Human Verification"
     type: "human_intervention"
     prompt: "Task 4 (Waist Length Shots) is complete. Please verify the three generated images."
+  - name: "Task - Human Verification"
+    type: "human_intervention"
+    prompt: "Change to Task  Please verify the generated images."
