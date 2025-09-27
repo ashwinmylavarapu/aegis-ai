@@ -1,15 +1,30 @@
-llm:
-  provider: "openai"
+logging:
+  level: "DEBUG"
 
-  google_genai_studio:
-    model: "gemini-pro"
-    api_key: "YOUR_GOOGLE_API_KEY" # Replace with your actual key
+llm:
+  provider: "google_genai_studio"
+
+  google_genai:
+    model: "gemini-2.5-flash"
+    api_key: "<<REDACTED>>" # Replace with your actual key
 
   openai:
-    model: "Gemini-2.5-Flash"
-    api_key: "YOUR_OPENAI_API_KEY" # Replace with your actual key
+    model: "Gemini-2.0-Flash-Preview"
+    api_key: "<<REDACTED>>" # Replace with your actual key
     base_url: "https://api.poe.com/v1" # Optional, for proxy
+context_management:
+  max_history_items: 6
+  max_tool_output_tokens: 2500
+# Configure the browser adapter to use browsermcp
+browser:
+  adapter: "playwright"
+  playwright:
+    cdp_endpoint: "http://localhost:9222"
+opa:
+  provider: "noop" # Can be "http" or "noop"
+  url: "http://localhost:8181/v1/data/aegis/allow"
 
-browser_mcp:
-  websocket_url: "ws://localhost:6279"
-  auth_token: "YOUR_BROWSERMCP_AUTH_TOKEN" # Replace with your actual token
+# OmniParser "Eyes" config
+omni_parser_adapter:
+  script_path: "scripts/omni_parser.test.py"
+  workdir: "scripts/workdir" # Directory where models and outputs are stored

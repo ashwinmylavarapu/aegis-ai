@@ -43,7 +43,18 @@ class BrowserAdapter(ABC):
     @abstractmethod
     async def wait(self, seconds: int) -> str:
         pass
+        
     @abstractmethod
     async def paste_image(self, selector: str, image_bytes: bytes) -> str:
         """Pastes an image from a byte string into a specified element."""
+        pass
+
+    @abstractmethod
+    async def take_screenshot(self, path: str) -> str:
+        """Takes a screenshot of the current page and saves it to a path."""
+        pass
+
+    @abstractmethod
+    async def press_key(self, key_combination: str) -> str:
+        """Presses a single key or a combination of keys."""
         pass

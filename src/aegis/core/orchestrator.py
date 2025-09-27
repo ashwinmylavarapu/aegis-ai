@@ -1,25 +1,27 @@
 # src/aegis/core/orchestrator.py
 import asyncio
 import os
-from datetime import datetime
 import json
-
 from loguru import logger
+from typing import List
 
 from aegis.adapters.outbound.browser_adapter_factory import get_browser_adapter
 from aegis.adapters.outbound.llm_adapter_factory import get_llm_adapter
-from aegis.adapters.outbound.omni_parser_adapter_factory import (
-    get_omni_parser_adapter,
-)
+from aegis.adapters.outbound.omni_parser_adapter_factory import get_omni_parser_adapter
 from aegis.core.context_manager import ContextManager
 from aegis.core.models import AegisContext, Playbook, Step, ToolCall, ToolResponse, Message
-from aegis.skills import linkedin
+
+# Import the new native keyboard skill
+from aegis.skills import native_keyboard
 
 def step_requires_vision(step: Step) -> bool:
+    """
+    Determines if a step requires visual understanding based on keywords.
+    """
     if step.type != "agent_step":
         return False
     prompt_lower = step.prompt.lower().strip()
-    non_visual_keywords = ["navigate to", "selector", "wait for", "paste_image", "type_text", "click"]
+    non_visual_keywords = ["navigate to", "selector", "wait for", "paste_image", "type_text", "click", "press_key"]
     return not any(keyword in prompt_lower for keyword in non_visual_keywords)
 
 class Orchestrator:
@@ -29,48 +31,41 @@ class Orchestrator:
         self.llm_adapter = get_llm_adapter(config)
         self.omni_parser_adapter = get_omni_parser_adapter(config)
         self.context_manager = ContextManager()
+        
+        # --- REGISTER THE NEW SKILL ---
+        self.skills = {
+            "native_keyboard": {
+                "press_key_native": native_keyboard.press_key_native
+            }
+        }
+        logger.info("Orchestrator initialized with native skills.")
 
     async def execute_playbook(self, playbook: Playbook):
         aegis_context = self.context_manager.create_context(playbook)
         logger.info(f"Executing playbook: {playbook.name}")
-        logger.debug(f"Playbook full definition: {playbook.model_dump_json(indent=2)}")
-
-
         for i, step in enumerate(playbook.steps):
             logger.info(f"--- Starting Step {i+1}/{len(playbook.steps)}: '{step.name}' ---")
             aegis_context.current_step = step
             if step.type == "human_intervention":
                 self.handle_human_intervention(step)
-            elif step.type in ["agent_step", "skill_step"]:
-                await self.execute_step(aegis_context, step)
+            elif step.type == "skill_step":
+                await self.skill_step(step, aegis_context)
+            elif step.type == "agent_step":
+                await self.execute_agent_step(aegis_context, step)
             else:
                 logger.warning(f"Unknown step type: {step.type}")
         return aegis_context
 
-    async def execute_step(self, aegis_context: AegisContext, step: Step):
-        logger.debug(f"Executing step '{step.name}' of type '{step.type}'")
-        if step.type == "skill_step":
-            await self.skill_step(step, aegis_context)
-            return
-
+    async def execute_agent_step(self, aegis_context: AegisContext, step: Step):
         use_vision = step_requires_vision(step)
-        logger.debug(f"Step '{step.name}' requires vision: {use_vision}")
-
         if use_vision:
-            logger.info("Vision mode enabled for this step.")
-            # ... (vision logic will go here)
+            # (Vision logic would go here)
+            pass
         else:
-            logger.debug("Bypassing observation for non-visual step.")
+            aegis_context.add_message(role="user", content=step.prompt)
 
-        logger.debug(f"Adding user message to context for step '{step.name}':\n{step.prompt}")
-        aegis_context.add_message(role="user", content=step.prompt)
-        
-        logger.debug("Sending context to LLM...")
         response_message = await self.llm_adapter.chat_completion(aegis_context.messages)
-        
-        logger.debug(f"Received LLM response: {response_message.model_dump_json(indent=2)}")
         aegis_context.messages.append(response_message)
-
         if response_message.tool_calls:
             await self.handle_tool_calls(response_message.tool_calls, aegis_context)
         else:
@@ -80,10 +75,24 @@ class Orchestrator:
         logger.info(f"Human intervention required: {step.prompt}")
         input("Press Enter to continue...")
 
-    async def skill_step(self, step, aegis_context: AegisContext):
+    async def skill_step(self, step: Step, aegis_context: AegisContext):
         logger.debug(f"Executing skill '{step.skill_name}.{step.function_name}' with params: {step.params}")
-        # ... (actual skill execution logic)
-        pass
+        try:
+            skill_module = self.skills.get(step.skill_name)
+            if not skill_module:
+                raise ValueError(f"Skill module '{step.skill_name}' not found.")
+            
+            skill_function = skill_module.get(step.function_name)
+            if not skill_function:
+                raise ValueError(f"Function '{step.function_name}' not found in skill '{step.skill_name}'.")
+
+            result = await skill_function(**(step.params or {}))
+            logger.info(f"Skill '{step.name}' executed successfully. Result: {result}")
+            aegis_context.add_message(role="user", content=f"Skill '{step.name}' completed with result: {result}")
+
+        except Exception as e:
+            logger.error(f"Error executing skill '{step.name}': {e}")
+            aegis_context.add_message(role="user", content=f"Error executing skill '{step.name}': {e}")
 
     async def handle_tool_calls(self, tool_calls: list[ToolCall], aegis_context: AegisContext):
         logger.debug(f"Handling {len(tool_calls)} tool calls...")
@@ -108,5 +117,4 @@ class Orchestrator:
                     ToolResponse(tool_call_id=call.id, tool_name=call.function_name, content="Error: Tool not found")
                 )
         
-        logger.debug(f"Adding tool responses to context:\n{json.dumps([tr.model_dump() for tr in tool_responses], indent=2)}")
         aegis_context.add_message(role="tool", content="", tool_responses=tool_responses)

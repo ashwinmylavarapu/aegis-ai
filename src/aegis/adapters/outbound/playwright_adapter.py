@@ -1,11 +1,13 @@
 # src/aegis/adapters/outbound/playwright_adapter.py
 from typing import List, Dict, Any, Optional
 import asyncio
+import sys
 from loguru import logger
 from playwright.async_api import async_playwright
 import pyperclip
 from PIL import Image
 import io
+import os
 
 from .base import OutboundAdapter
 
@@ -15,11 +17,9 @@ def copy_image_to_clipboard(image_path: str):
     try:
         image = Image.open(image_path)
         output = io.BytesIO()
-        # Convert to a format that clipboard understands, e.g., PNG
         image.convert("RGB").save(output, "BMP")
         data = output.getvalue()[14:]
         output.close()
-        # This is a cross-platform way to handle clipboard, but may have OS-level dependencies
         pyperclip.copy(data)
         logger.debug(f"Successfully copied image from '{image_path}' to clipboard.")
         return True
@@ -80,11 +80,52 @@ class PlaywrightAdapter(OutboundAdapter):
         return result
 
     async def press_key(self, key: str) -> str:
+        # --- START: DEBUGGING & OBSERVABILITY LOGIC ---
         logger.debug(f"Enter tool: press_key(key='{key}')")
-        await self.page.keyboard.press(key)
-        result = f"Successfully pressed the '{key}' key."
-        logger.debug(f"Exit tool: press_key -> {result}")
-        return result
+        
+        try:
+            debug_dir = "debug_screenshots"
+            os.makedirs(debug_dir, exist_ok=True)
+            
+            # 1. VISUAL EVIDENCE (BEFORE): See the state before the action.
+            before_path = os.path.join(debug_dir, "debug_before_keypress.png")
+            await self.page.screenshot(path=before_path)
+            logger.debug(f"Saved pre-action screenshot to '{before_path}'")
+
+            await self.page.locator('body').focus()
+            logger.debug("Focused on the page body.")
+
+            parts = key.split('+')
+            modifiers = [part for part in parts[:-1] if part in ['Control', 'Alt', 'Shift', 'Meta']]
+            main_key = parts[-1]
+
+            for modifier in modifiers:
+                await self.page.keyboard.down(modifier)
+                logger.debug(f"Keyboard.down('{modifier}')")
+                await asyncio.sleep(0.1) # Added delay
+
+            await self.page.keyboard.press(main_key)
+            logger.debug(f"Keyboard.press('{main_key}')")
+            await asyncio.sleep(0.1) # Added delay
+
+            for modifier in reversed(modifiers):
+                await self.page.keyboard.up(modifier)
+                logger.debug(f"Keyboard.up('{modifier}')")
+                await asyncio.sleep(0.1) # Added delay
+
+            # 2. VISUAL EVIDENCE (AFTER): See the state after the action.
+            after_path = os.path.join(debug_dir, "debug_after_keypress.png")
+            await self.page.screenshot(path=after_path)
+            logger.debug(f"Saved post-action screenshot to '{after_path}'")
+
+            result = f"Successfully executed key press '{key}'. Check debug screenshots for visual verification."
+            logger.debug(f"Exit tool: press_key -> {result}")
+            return result
+
+        except Exception as e:
+            logger.error(f"Failed to press key combination '{key}': {e}")
+            return f"Error pressing key combination '{key}': {e}"
+        # --- END: DEBUGGING & OBSERVABILITY LOGIC ---
 
     async def wait(self, seconds: int) -> str:
         logger.debug(f"Enter tool: wait(seconds={seconds})")
@@ -104,7 +145,6 @@ class PlaywrightAdapter(OutboundAdapter):
                 logger.debug("No image path provided. Pasting directly from clipboard.")
 
             await self.page.click(selector)
-            # Use keyboard shortcuts for robust pasting
             await self.page.keyboard.press("ControlOrMeta+V")
             result = f"Pasted image into '{selector}'."
             logger.debug(f"Exit tool: paste_image -> {result}")
@@ -113,14 +153,28 @@ class PlaywrightAdapter(OutboundAdapter):
             logger.error(f"Failed to paste image: {e}")
             return f"Error pasting image: {e}"
 
+    async def take_screenshot(self, path: str) -> str:
+        logger.debug(f"Enter tool: take_screenshot(path='{path}')")
+        await self.page.screenshot(path=path)
+        result = f"Screenshot saved to {path}"
+        logger.debug(f"Exit tool: take_screenshot -> {result}")
+        return result
+
     @classmethod
     def get_tools(cls) -> List[dict]:
-        """Definitive, complete list of all browser tools available to the agent."""
         return [
             {"name": "navigate", "description": "Navigates to a URL.", "parameters": {"type": "OBJECT", "properties": {"url": {"type": "STRING"}}, "required": ["url"]}},
             {"name": "click", "description": "Clicks an element by selector.", "parameters": {"type": "OBJECT", "properties": {"selector": {"type": "STRING"}}, "required": ["selector"]}},
             {"name": "type_text", "description": "Types text into an element by selector.", "parameters": {"type": "OBJECT", "properties": {"selector": {"type": "STRING"}, "text": {"type": "STRING"}}, "required": ["selector", "text"]}},
-            {"name": "press_key", "description": "Presses a key (e.g., 'Enter').", "parameters": {"type": "OBJECT", "properties": {"key": {"type": "STRING"}}, "required": ["key"]}},
+            {
+                "name": "press_key",
+                "description": "Presses a single key or a combination of keys, like 'Enter', 'F1', 'Control+C', or 'Alt+A'. Handles Mac vs Windows/Linux differences.",
+                "parameters": {
+                    "type": "OBJECT",
+                    "properties": {"key": {"type": "STRING", "description": "The key or key combination to press (e.g., 'Alt+A')."}}, 
+                    "required": ["key"]
+                }
+            },
             {"name": "wait", "description": "Waits for a specified number of seconds.", "parameters": {"type": "OBJECT", "properties": {"seconds": {"type": "INTEGER"}}, "required": ["seconds"]}},
             {
                 "name": "paste_image",
@@ -134,4 +188,15 @@ class PlaywrightAdapter(OutboundAdapter):
                     "required": ["selector"]
                 },
             },
+            {
+                "name": "take_screenshot",
+                "description": "Takes a screenshot of the current page and saves it to a file.",
+                "parameters": {
+                    "type": "OBJECT",
+                    "properties": {
+                        "path": {"type": "STRING", "description": "The file path to save the screenshot to."}
+                    },
+                    "required": ["path"]
+                }
+            }
         ]

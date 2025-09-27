@@ -1,10 +1,11 @@
-name: "Test Native Key Press for Browser Extension"
-description: "Tests the ability to trigger a browser extension shortcut via a native OS-level key press."
-persona: "You are a testing agent."
+name: "Test Native Key Press for Comet Extension"
+description: "Tests triggering the Comet browser extension via a native OS-level key press."
+persona: "You are a testing agent verifying browser extension integration."
 
 steps:
   - name: "Invoke Comet Assistant via Native Shortcut"
     type: "skill_step"
+    prompt: "This step uses a native OS skill to press Alt+A to activate the Comet browser extension."
     skill_name: "native_keyboard"
     function_name: "press_key_native"
     params:
@@ -13,7 +14,7 @@ steps:
   
   - name: "Wait for sidebar to appear"
     type: "agent_step"
-    prompt: "wait for 5 seconds"
+    prompt: "wait for 3 seconds"
 
   - name: "Verify sidebar"
     type: "human_intervention"
