@@ -1,0 +1,41 @@
+name: "Instruct Comet Assistant to Search on LinkedIn"
+description: "Opens the Comet browser extension, types a command, and submits it."
+persona: "You are an agent that uses browser extensions to accomplish tasks."
+
+steps:
+  - name: "Invoke Comet Assistant"
+    type: "skill_step"
+    prompt: "Uses a native OS skill to press Alt+A to activate the Comet browser extension."
+    skill_name: "native_keyboard"
+    function_name: "press_key_native"
+    params:
+      key: "a"
+      modifier: "alt"
+  
+  - name: "Wait for Assistant to Initialize"
+    type: "agent_step"
+    prompt: "wait for 2 seconds"
+
+  - name: "Type Command into Assistant"
+    type: "skill_step"
+    prompt: "Uses a native OS skill to type a command into the focused application (Comet)."
+    skill_name: "native_keyboard"
+    function_name: "type_text_native"
+    params:
+      text: |
+        Go to https://www.linkedin.com/in/adityaprathipati/recent-activity/all/.
+        Show me the posts in the last 3 weeks. If the post is now shown completely. Click on "more" to list the complete post and the summarise.
+
+
+  - name: "Submit Command to Assistant"
+    type: "skill_step"
+    prompt: "Uses a native OS skill to press the Enter key to submit the command."
+    skill_name: "native_keyboard"
+    function_name: "press_key_native"
+    params:
+      key: "enter"
+      # No modifier is needed for the enter key
+
+  - name: "Human Verification"
+    type: "human_intervention"
+    prompt: "Please visually confirm that the agent's command was typed and submitted in the Comet assistant, and that the browser is now navigating to LinkedIn."
