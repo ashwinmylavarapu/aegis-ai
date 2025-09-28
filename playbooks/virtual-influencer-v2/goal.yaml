@@ -19,7 +19,7 @@ steps:
     prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
   - name: "Task 1 - Step 5: Wait for Generation"
     type: "agent_step"
-    prompt: "Use the `wait` tool for 60 seconds."
+    prompt: "Wait for 60 seconds." # <-- FIX
   - name: "Task 1 - Step 6: Set Party Prompt"
     type: "agent_step"
     prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change attire to party wear. Set home dimlit. Make her waving."'
@@ -28,7 +28,7 @@ steps:
     prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
   - name: "Task 1 - Step 8: Wait for Generation"
     type: "agent_step"
-    prompt: "Use the `wait` tool for 60 seconds."
+    prompt: "Wait for 60 seconds." # <-- FIX
   - name: "Task - Human Verification"
     type: "human_intervention"
     prompt: "Change to Task  Please verify the generated images."
@@ -45,7 +45,7 @@ steps:
     prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
   - name: "Task 2 - Step 4: Wait for Generation"
     type: "agent_step"
-    prompt: "Use the `wait` tool for 60 seconds."
+    prompt: "Wait for 60 seconds." # <-- FIX
   - name: "Task 2 - Step 5: Set Sad Prompt"
     type: "agent_step"
     prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to frontal view profile head shot. Make her look sad."'
@@ -54,7 +54,7 @@ steps:
     prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
   - name: "Task 2 - Step 7: Wait for Generation"
     type: "agent_step"
-    prompt: "Use the `wait` tool for 60 seconds."
+    prompt: "Wait for 60 seconds." # <-- FIX
   - name: "Task 2 - Step 8: Set Amused Prompt"
     type: "agent_step"
     prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to frontal view profile head shot. Change background to a park. Make her look amused."'
@@ -63,7 +63,7 @@ steps:
     prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
   - name: "Task 2 - Step 10: Wait for Generation"
     type: "agent_step"
-    prompt: "Use the `wait` tool for 60 seconds."
+    prompt: "Wait for 60 seconds." # <-- FIX
   - name: "Task - Human Verification"
     type: "human_intervention"
     prompt: "Change to Task  Please verify the generated images."
@@ -80,7 +80,7 @@ steps:
     prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
   - name: "Task 3 - Step 4: Wait for Generation"
     type: "agent_step"
-    prompt: "Use the `wait` tool for 60 seconds."
+    prompt: "Wait for 60 seconds." # <-- FIX
   - name: "Task 3 - Step 5: Paste Reference Image (Office)"
     type: "agent_step"
     prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
@@ -92,7 +92,7 @@ steps:
     prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
   - name: "Task 3 - Step 8: Wait for Generation"
     type: "agent_step"
-    prompt: "Use the `wait` tool for 60 seconds."
+    prompt: "Wait for 60 seconds." # <-- FIX
   - name: "Task - Human Verification"
     type: "human_intervention"
     prompt: "Change to Task  Please verify the generated images."
@@ -109,7 +109,7 @@ steps:
     prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
   - name: "Task 4 - Step 4: Wait for Generation"
     type: "agent_step"
-    prompt: "Use the `wait` tool for 60 seconds."
+    prompt: "Wait for 60 seconds." # <-- FIX
   - name: "Task 4 - Step 5: Set Saree Prompt"
     type: "agent_step"
     prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Make it a waist length shot. Change attire to a saree. Change background to a park. Show a happy emotion. Make her standing."'
@@ -118,7 +118,7 @@ steps:
     prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
   - name: "Task 4 - Step 7: Wait for Generation"
     type: "agent_step"
-    prompt: "Use the `wait` tool for 60 seconds."
+    prompt: "Wait for 60 seconds." # <-- FIX
   - name: "Task 4 - Step 8: Set Kurta Prompt"
     type: "agent_step"
     prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change attire to a kurta. Change background to a cafe. Make her sitting."'
@@ -127,7 +127,7 @@ steps:
     prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
   - name: "Task 4 - Step 10: Wait for Generation"
     type: "agent_step"
-    prompt: "Use the `wait` tool for 60 seconds."
+    prompt: "Wait for 60 seconds." # <-- FIX
   - name: "Task 4 - Human Verification"
     type: "human_intervention"
     prompt: "Task 4 (Waist Length Shots) is complete. Please verify the three generated images."
