@@ -1,0 +1,47 @@
+name: "Closed-Loop Interaction with Comet Assistant"
+description: "Opens Comet, instructs it to perform a search, and then reads the result from the screen."
+persona: "You are an agent that uses browser extensions to accomplish tasks, verifying the outcome by reading the screen."
+
+steps:
+  - name: "Invoke Comet Assistant"
+    type: "skill_step"
+    prompt: "Uses a native OS skill to press Alt+A to activate the Comet browser extension."
+    skill_name: "native_keyboard"
+    function_name: "press_key_native"
+    params:
+      key: "a"
+      modifier: "alt"
+  
+  - name: "Wait for Assistant to Initialize"
+    type: "agent_step"
+    prompt: "wait for 2 seconds"
+
+  - name: "Type Command into Assistant"
+    type: "skill_step"
+    prompt: "Uses a native OS skill to type a command into the focused application (Comet)."
+    skill_name: "native_keyboard"
+    function_name: "type_text_native"
+    params:
+      text: "Go to linkedin.com/jobs. Search for Principal Ai Engineer"
+
+  - name: "Submit Command to Assistant"
+    type: "skill_step"
+    prompt: "Uses a native OS skill to press the Enter key to submit the command."
+    skill_name: "native_keyboard"
+    function_name: "press_key_native"
+    params:
+      key: "enter"
+
+  - name: "Wait for Page Navigation and Assistant Response"
+    type: "agent_step"
+    prompt: "wait for 30 seconds"
+
+  - name: "Read Assistant's Response"
+    type: "skill_step"
+    prompt: "Uses a native OS skill to perform OCR on the entire screen and read the assistant's output."
+    skill_name: "native_screen_reader"
+    function_name: "read_screen_content"
+
+  - name: "Human Verification"
+    type: "human_intervention"
+    prompt: "Please review the agent's context. The last message should contain the text read from the screen. Does it match the output of the Comet assistant?"

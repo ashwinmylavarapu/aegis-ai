@@ -2,52 +2,62 @@ import Foundation
 import Vision
 import ImageIO
 
-func loadCGImage(url: URL) -> CGImage? {
-    guard let src = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
-    return CGImageSourceCreateImageAtIndex(src, 0, nil)
-}
+// --- START: MODIFIED SCRIPT STRUCTURE ---
+// The @main attribute and App struct have been removed to make this a valid top-level script.
 
-@main
-struct App {
-    static func main() {
-        guard CommandLine.arguments.count >= 2 else {
-            fputs("usage: mac_ocr <image-path>\n", stderr); exit(2)
-        }
-        let url = URL(fileURLWithPath: CommandLine.arguments[1])
-        guard let cgImage = loadCGImage(url: url) else { fputs("bad image\n", stderr); exit(1) }
-
-        let width = cgImage.width, height = cgImage.height
-        var items: [[String: Any]] = []
-
-        let req = VNRecognizeTextRequest { request, error in
-            guard let obs = request.results as? [VNRecognizedTextObservation] else { return }
-            for o in obs {
-                guard let top = o.topCandidates(1).first else { continue }
-                let bb = o.boundingBox  // normalized [0,1] in Vision coords (origin bottom-left)
-                let x1 = Int((bb.minX * CGFloat(width)).rounded())
-                let y1 = Int(((1 - bb.maxY) * CGFloat(height)).rounded())
-                let x2 = Int((bb.maxX * CGFloat(width)).rounded())
-                let y2 = Int(((1 - bb.minY) * CGFloat(height)).rounded())
-                let poly = [[x1,y1],[x2,y1],[x2,y2],[x1,y2]]
-                items.append([
-                    "poly": poly,
-                    "bbox": [x1,y1,x2,y2],
-                    "text": top.string,
-                    "score": Double(top.confidence)
-                ])
-            }
-        }
-        req.recognitionLevel = .accurate
-        req.usesLanguageCorrection = true
-
-        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-        do { try handler.perform([req]) } catch {
-            fputs("vision error: \(error)\n", stderr); exit(1)
-        }
-
-        if let data = try? JSONSerialization.data(withJSONObject: items, options: []),
-           let s = String(data: data, encoding: .utf8) {
-            print(s)
-        }
+// Helper function to load a CGImage from a file path
+func loadImage(from path: String) -> CGImage? {
+    guard let url = URL(string: "file://\(path)"),
+          let imageSource = CGImageSourceCreateWithURL(url as CFURL, nil),
+          let image = CGImageSourceCreateImageAtIndex(imageSource, 0, nil)
+    else {
+        fputs("Error: Could not load image at path \(path)\n", stderr)
+        return nil
     }
+    return image
 }
+
+// Ensure the correct number of arguments are provided
+guard CommandLine.arguments.count == 2 else {
+    fputs("Usage: swift mac_ocr.swift <image_path>\n", stderr)
+    exit(1)
+}
+
+let imagePath = CommandLine.arguments[1]
+
+// Load the image
+guard let image = loadImage(from: imagePath) else {
+    exit(1)
+}
+
+// Create a Vision request for text recognition
+let request = VNRecognizeTextRequest { (request, error) in
+    if let error = error {
+        fputs("Error: Vision request failed: \(error.localizedDescription)\n", stderr)
+        return
+    }
+
+    guard let observations = request.results as? [VNRecognizedTextObservation] else {
+        return
+    }
+
+    // Concatenate the recognized text
+    let recognizedStrings = observations.compactMap { observation in
+        observation.topCandidates(1).first?.string
+    }
+    
+    print(recognizedStrings.joined(separator: "\n"))
+}
+
+// Set the recognition level to get more accurate results
+request.recognitionLevel = .accurate
+
+// Create a request handler and perform the request
+let handler = VNImageRequestHandler(cgImage: image, options: [:])
+do {
+    try handler.perform([request])
+} catch {
+    fputs("Error: Could not perform Vision request: \(error.localizedDescription)\n", stderr)
+    exit(1)
+}
+// --- END: MODIFIED SCRIPT STRUCTURE ---
