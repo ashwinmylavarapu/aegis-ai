@@ -41,7 +41,6 @@ class Orchestrator:
         logger.info("Orchestrator initialized with native skills.")
 
     async def execute_playbook(self, playbook: Playbook):
-        # --- OBSERVABILITY: Add a unique ID for this entire playbook run ---
         playbook_run_id = f"playbook-run-{uuid.uuid4()}"
         run_log = logger.bind(playbook_run_id=playbook_run_id)
         
@@ -50,31 +49,21 @@ class Orchestrator:
         run_log.info("Starting playbook execution", playbook_name=playbook.name)
         run_log.debug("Playbook definition", definition=playbook.model_dump())
         
-        # TRACING: A new trace span for the playbook run would start here.
-        # METRICS: Increment a 'playbook_runs_total' counter.
-        
         for i, step in enumerate(playbook.steps):
             step_log = run_log.bind(step_name=step.name, step_number=f"{i+1}/{len(playbook.steps)}", step_type=step.type)
             step_log.info("--- Starting Step ---")
             
             aegis_context.current_step = step
             
-            # TRACING: A new child span for the step would start here.
-            
             if step.type == "human_intervention": self.handle_human_intervention(step, step_log)
             elif step.type == "skill_step": await self.skill_step(step, aegis_context, step_log)
             elif step.type == "agent_step": await self.execute_agent_step(aegis_context, step, step_log)
             else: step_log.warning("Unknown step type detected")
 
-            # --- OBSERVABILITY: Log a snapshot of the agent's memory after each step ---
             step_log.debug("Step completed. Current agent context snapshot.", 
-                           context_messages=[msg.model_dump() for msg in aegis_context.messages])
+                           context_messages=[msg.model_dump(exclude_none=True) for msg in aegis_context.messages])
                            
-            # TRACING: The step span would end here.
-            
         run_log.info("Playbook execution finished successfully.")
-        # METRICS: Increment a 'playbook_runs_completed' counter.
-        # TRACING: The playbook run span would end here.
         return aegis_context
 
     async def execute_agent_step(self, aegis_context: AegisContext, step: Step, step_log: logger):
@@ -82,10 +71,9 @@ class Orchestrator:
         step_log.debug("Executing agent step", requires_vision=requires_vision)
 
         if requires_vision:
-            # Vision logic would go here
             pass
         else:
-            aegis_context.add_message(role="user", content=step.prompt)
+            aegis_context.messages.append(Message(role="user", content=step.prompt))
 
         response_message = await self.llm_adapter.chat_completion(aegis_context.messages)
         aegis_context.messages.append(response_message)
@@ -110,12 +98,11 @@ class Orchestrator:
 
             result = await skill_function(**(step.params or {}))
             step_log.info("Skill executed successfully.")
-            aegis_context.add_message(role="user", content=f"Skill '{step.name}' completed. Result: {result}")
+            aegis_context.messages.append(Message(role="user", content=f"Skill '{step.name}' completed. Result: {result}"))
 
         except Exception as e:
-            # --- OBSERVABILITY: Log full context on error ---
-            step_log.error("Error executing skill", error=str(e), context_snapshot=[msg.model_dump() for msg in aegis_context.messages])
-            aegis_context.add_message(role="user", content=f"Error executing skill '{step.name}': {e}")
+            step_log.error("Error executing skill", error=str(e), context_snapshot=[msg.model_dump(exclude_none=True) for msg in aegis_context.messages])
+            aegis_context.messages.append(Message(role="user", content=f"Error executing skill '{step.name}': {e}"))
 
     async def handle_tool_calls(self, tool_calls: list[ToolCall], aegis_context: AegisContext, step_log: logger):
         step_log.debug(f"Handling {len(tool_calls)} tool calls.")
@@ -129,11 +116,20 @@ class Orchestrator:
                     result = await tool_function(**call.function_args)
                     tool_responses.append(ToolResponse(tool_call_id=call.id, tool_name=call.function_name, content=str(result) or "Success"))
                 except Exception as e:
-                    # --- OBSERVABILITY: Log full context on error ---
-                    call_log.error("Error executing tool", error=str(e), context_snapshot=[msg.model_dump() for msg in aegis_context.messages])
+                    call_log.error("Error executing tool", error=str(e), context_snapshot=[msg.model_dump(exclude_none=True) for msg in aegis_context.messages])
                     tool_responses.append(ToolResponse(tool_call_id=call.id, tool_name=call.function_name, content=f"Error: {e}"))
             else:
                 call_log.warning("Tool not found in browser adapter.")
                 tool_responses.append(ToolResponse(tool_call_id=call.id, tool_name=call.function_name, content="Error: Tool not found"))
         
-        aegis_context.add_message(role="tool", content="", tool_responses=tool_responses)
+        # --- THIS IS THE FIX ---
+        # Instead of creating a new 'tool' message, we find the last 'assistant' message
+        # and attach the responses to it. This correctly groups calls and responses
+        # into a single logical turn for the model.
+        if aegis_context.messages and aegis_context.messages[-1].role == "assistant":
+            aegis_context.messages[-1].tool_responses = tool_responses
+            logger.debug("Appended tool responses to the last assistant message.")
+        else:
+            # This is a fallback that should ideally not be hit.
+            logger.error("Could not find a preceding assistant message to attach tool responses to.")
+            aegis_context.messages.append(Message(role="tool", tool_responses=tool_responses))

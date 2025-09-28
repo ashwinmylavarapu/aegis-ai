@@ -6,6 +6,7 @@ from google.generativeai.types import content_types
 from loguru import logger
 
 from aegis.core.models import Message, ToolCall
+from aegis.core.context_manager import ContextTrimmer # Import the trimmer
 from aegis.adapters.outbound.playwright_adapter import PlaywrightAdapter
 from .base import LLMAdapter
 
@@ -26,23 +27,35 @@ class GoogleGenAIAdapter(LLMAdapter):
         genai.configure(api_key=api_key)
         
         tools = PlaywrightAdapter.get_tools()
-        logger.debug(f"--- Loading Tools into GoogleGenAIAdapter ---")
-        logger.debug(f"Found {len(tools)} tools to load.")
-        logger.debug(f"Tools JSON: {json.dumps(tools, indent=2)}")
-        logger.debug("-----------------------------------------")
-
+        # No need to log tools here, it's too verbose for every run.
+        
         self.model = genai.GenerativeModel(
             model_name,
             tools=tools,
             system_instruction=SYSTEM_INSTRUCTION,
         )
+        # Initialize the context trimmer with the main config
+        self.trimmer = ContextTrimmer(config)
         logger.info(f"GoogleGenAIAdapter initialized with model: {model_name}")
 
     async def chat_completion(self, messages: List[Message]) -> Message:
-        history = self._format_messages_for_google(messages)
+        # --- FIX: Trim the context BEFORE processing and logging ---
+        trimmed_messages = self.trimmer.trim(messages)
+        history = self._format_messages_for_google(trimmed_messages)
         
-        logger.debug(f"--- Sending New Request to LLM ---")
-        logger.debug(f"Full conversation history being sent:\n{json.dumps(history, indent=2, default=str)}")
+        # --- ENHANCED OBSERVABILITY ---
+        try:
+            token_count = await self.model.count_tokens_async(history)
+            logger.debug(
+                "--- Preparing to Send Request to LLM ---\n"
+                f"Original message count: {len(messages)}, Trimmed message count: {len(history)}.\n"
+                f"Payload token count: {token_count.total_tokens}\n"
+                f"Final conversation history being sent:\n{json.dumps(history, indent=2, default=str)}"
+            )
+        except Exception as e:
+            logger.error(f"Fatal: Could not calculate token count before sending. Error: {e}")
+            logger.debug(f"History that failed token count: {json.dumps(history, indent=2, default=str)}")
+            raise # Re-raise the exception to halt execution, as this is a critical failure.
         
         # The history for the chat model should be all but the last message
         chat = self.model.start_chat(history=history[:-1])
