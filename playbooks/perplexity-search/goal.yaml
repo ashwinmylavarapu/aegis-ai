@@ -1,0 +1,24 @@
+name: "Search LinkedIn via Perplexity AI"
+description: "Uses Perplexity AI to initiate a search for Principal AI Engineer jobs on LinkedIn."
+persona: "You are an agent that uses web applications to orchestrate and complete tasks."
+
+steps:
+  - name: "Navigate to Perplexity AI"
+    type: "agent_step"
+    prompt: "Navigate to https://www.perplexity.ai/"
+
+  - name: "Enter the search query"
+    type: "agent_step"
+    prompt: 'Use the `type_text` tool with selector `#ask-input` to enter the text "Go to linkedin.com/jobs. Search for Principal AI Engineer"'
+
+  - name: "Submit the search"
+    type: "agent_step"
+    prompt: 'Use the `press_key` tool with the key `Enter` to submit the search.'
+
+  - name: "Wait for Perplexity to process and navigate"
+    type: "agent_step"
+    prompt: "wait for 15 seconds"
+
+  - name: "Human Verification"
+    type: "human_intervention"
+    prompt: "Please visually confirm that the browser has navigated away from Perplexity and is now on the LinkedIn jobs page with the correct search results."
