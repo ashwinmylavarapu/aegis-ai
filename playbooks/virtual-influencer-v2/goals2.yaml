@@ -3,253 +3,134 @@ description: "Generate a dataset of images for a virtual influencer using a char
 persona: |
   You are Aegis, a web automation agent. Your goal is to follow the playbook steps precisely to generate a series of images. You will use the tools provided to interact with the web page based on the explicit instructions in each step.
 
+routines:
+  generate_first_image_with_reference:
+    - name: "Paste Reference Image for {{params.description}}"
+      type: "agent_step"
+      prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`'
+    - name: "Set Prompt for {{params.description}}"
+      type: "agent_step"
+      prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "{{params.prompt_text}}"'
+    - name: "Click Send"
+      type: "agent_step"
+      prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`'
+    - name: "Wait for Generation"
+      type: "agent_step"
+      prompt: "wait for 60 seconds"
+
+  generate_subsequent_image:
+    - name: "Set Prompt for {{params.description}}"
+      type: "agent_step"
+      prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "{{params.prompt_text}}"'
+    - name: "Click Send"
+      type: "agent_step"
+      prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`'
+    - name: "Wait for Generation"
+      type: "agent_step"
+      prompt: "wait for 60 seconds"
+
 steps:
+  # NOTE: This playbook assumes the agent is already on the correct page from a previous playbook.
+
   # --- Task 5: Full length studio portrait shots ---
-  - name: "Task 5 - Step 1: Paste Reference Image (Frontal)"
-    type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
-  - name: "Task 5 - Step 2: Set Frontal Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to full length studio portrait shot, frontal view"'
-  - name: "Task 5 - Step 3: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 5 - Step 4: Wait for Generation"
-    type: "agent_step"
-    prompt: "Change to Use the `wait` tool for 60 seconds."
-  - name: "Task 5 - Step 5: Paste Reference Image (Side Left)"
-    type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
-  - name: "Task 5 - Step 6: Set Side Left Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to full length studio portrait shot, side left view"'
-  - name: "Task 5 - Step 7: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 5 - Step 8: Wait for Generation"
-    type: "agent_step"
-    prompt: "Change to Use the `wait` tool for 60 seconds."
-  - name: "Task 5 - Step 9: Paste Reference Image (Side Right)"
-    type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
-  - name: "Task 5 - Step 10: Set Side Right Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to full length studio portrait shot, side right view"'
-  - name: "Task 5 - Step 11: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 5 - Step 12: Wait for Generation"
-    type: "agent_step"
-    prompt: "Change to Use the `wait` tool for 60 seconds."
-  - name: "Task - Human Verification"
+  - name: "Task 5 - Generate First Image (Frontal)"
+    type: "run_routine"
+    routine_name: "generate_first_image_with_reference"
+    loop_with:
+      - description: "Frontal Portrait"
+        prompt_text: "Change to knee length  close portrait shot on a beach, frontal view. Change attire to a 2 piece beach wear."
+  - name: "Task 5 - Generate Subsequent Images (Side Views)"
+    type: "run_routine"
+    routine_name: "generate_subsequent_image"
+    loop_with:
+      - description: "Side Left Portrait"
+        prompt_text: "Change to full length studio portrait shot, side left view"
+      - description: "Side Right Portrait"
+        prompt_text: "Change to full length studio portrait shot, side right view"
+  - name: "Human Verification 5"
     type: "human_intervention"
-    prompt: "Change to Task  Please verify the generated images."
+    prompt: "Please verify the three generated portrait shots."
 
   # --- Task 6: Different lighting conditions ---
-  - name: "Task 6 - Step 1: Paste Reference Image (Dim Light)"
-    type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
-  - name: "Task 6 - Step 2: Set Dim Light Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to frontal view profile head shot, dim light"'
-  - name: "Task 6 - Step 3: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 6 - Step 4: Wait for Generation"
-    type: "agent_step"
-    prompt: "Change to Use the `wait` tool for 60 seconds."
-  - name: "Task 6 - Step 5: Paste Reference Image (Moon Light)"
-    type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
-  - name: "Task 6 - Step 6: Set Moon Light Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to frontal view profile head shot, moon light"'
-  - name: "Task 6 - Step 7: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 6 - Step 8: Wait for Generation"
-    type: "agent_step"
-    prompt: "Change to Use the `wait` tool for 60 seconds."
-  - name: "Task 6 - Step 9: Paste Reference Image (Strobe Party Lights)"
-    type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
-  - name: "Task 6 - Step 10: Set Strobe Party Lights Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to frontal view profile head shot, strobe party lights"'
-  - name: "Task 6 - Step 11: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 6 - Step 12: Wait for Generation"
-    type: "agent_step"
-    prompt: "Change to Use the `wait` tool for 60 seconds."
-  - name: "Task 6 - Step 13: Paste Reference Image (Red Light)"
-    type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
-  - name: "Task 6 - Step 14: Set Red Light Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to frontal view profile head shot, red light"'
-  - name: "Task 6 - Step 15: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 6 - Step 16: Wait for Generation"
-    type: "agent_step"
-    prompt: "Change to Use the `wait` tool for 60 seconds."
-  - name: "Task - Human Verification"
+  - name: "Task 6 - Generate First Image (Dim Light)"
+    type: "run_routine"
+    routine_name: "generate_first_image_with_reference"
+    loop_with:
+      - description: "Dim Light"
+        prompt_text: "Change to frontal view profile head shot, dim light"
+  - name: "Task 6 - Generate Subsequent Images (Other Lighting)"
+    type: "run_routine"
+    routine_name: "generate_subsequent_image"
+    loop_with:
+      - description: "Moon Light"
+        prompt_text: "Change to frontal view profile head shot, moon light"
+      - description: "Strobe Party Lights"
+        prompt_text: "Change to frontal view profile head shot, strobe party lights"
+      - description: "Red Light"
+        prompt_text: "Change to frontal view profile head shot, red light"
+  - name: "Human Verification 6"
     type: "human_intervention"
-    prompt: "Change to Task  Please verify the generated images."
+    prompt: "Please verify the four generated lighting condition images."
+
   # --- Task 7: Fashion portraits ---
-  - name: "Task 7 - Step 1: Paste Reference Image (Fashion 1)"
-    type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
-  - name: "Task 7 - Step 2: Set Fashion 1 Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to fashion portrait, haute couture, dramatic pose"'
-  - name: "Task 7 - Step 3: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 7 - Step 4: Wait for Generation"
-    type: "agent_step"
-    prompt: "Change to Use the `wait` tool for 60 seconds."
-  - name: "Task 7 - Step 5: Paste Reference Image (Fashion 2)"
-    type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
-  - name: "Task 7 - Step 6: Set Fashion 2 Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to fashion portrait, street style, urban background"'
-  - name: "Task 7 - Step 7: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 7 - Step 8: Wait for Generation"
-    type: "agent_step"
-    prompt: "Change to Use the `wait` tool for 60 seconds."
-  - name: "Task 7 - Step 9: Paste Reference Image (Fashion 3)"
-    type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
-  - name: "Task 7 - Step 10: Set Fashion 3 Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to fashion portrait, avant-garde, abstract background"'
-  - name: "Task 7 - Step 11: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 7 - Step 12: Wait for Generation"
-    type: "agent_step"
-    prompt: "Change to Use the `wait` tool for 60 seconds."
-  - name: "Task 7 - Step 13: Paste Reference Image (Fashion 4)"
-    type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
-  - name: "Task 7 - Step 14: Set Fashion 4 Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to fashion portrait, vintage style, retro background"'
-  - name: "Task 7 - Step 15: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 7 - Step 16: Wait for Generation"
-    type: "agent_step"
-    prompt: "Change to Use the `wait` tool for 60 seconds."
-  - name: "Task - Human Verification"
+  - name: "Task 7 - Generate First Image (Haute Couture)"
+    type: "run_routine"
+    routine_name: "generate_first_image_with_reference"
+    loop_with:
+      - description: "Haute Couture"
+        prompt_text: "Change to fashion portrait, haute couture, dramatic pose"
+  - name: "Task 7 - Generate Subsequent Images (Other Fashion)"
+    type: "run_routine"
+    routine_name: "generate_subsequent_image"
+    loop_with:
+      - description: "Street Style"
+        prompt_text: "Change to fashion portrait, street style, urban background"
+      - description: "Avant-Garde"
+        prompt_text: "Change to fashion portrait, avant-garde, abstract background"
+      - description: "Vintage Style"
+        prompt_text: "Change to fashion portrait, vintage style, retro background"
+  - name: "Human Verification 7"
     type: "human_intervention"
-    prompt: "Change to Task  Please verify the generated images."
+    prompt: "Please verify the four generated fashion portraits."
+
   # --- Task 8: Weird facial expressions ---
-  - name: "Task 8 - Step 1: Paste Reference Image (Weird 1)"
-    type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
-  - name: "Task 8 - Step 2: Set Weird 1 Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to weird facial expression, surprised with eyes wide open and mouth agape"'
-  - name: "Task 8 - Step 3: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 8 - Step 4: Wait for Generation"
-    type: "agent_step"
-    prompt: "Change to Use the `wait` tool for 60 seconds."
-  - name: "Task 8 - Step 5: Paste Reference Image (Weird 2)"
-    type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
-  - name: "Task 8 - Step 6: Set Weird 2 Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to weird facial expression, sticking tongue out and crossing eyes"'
-  - name: "Task 8 - Step 7: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 8 - Step 8: Wait for Generation"
-    type: "agent_step"
-    prompt: "Change to Use the `wait` tool for 60 seconds."
-  - name: "Task 8 - Step 9: Paste Reference Image (Weird 3)"
-    type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
-  - name: "Task 8 - Step 10: Set Weird 3 Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to weird facial expression, puffing cheeks out"'
-  - name: "Task 8 - Step 11: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 8 - Step 12: Wait for Generation"
-    type: "agent_step"
-    prompt: "Change to Use the `wait` tool for 60 seconds."
-  - name: "Task 8 - Step 13: Paste Reference Image (Weird 4)"
-    type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
-  - name: "Task 8 - Step 14: Set Weird 4 Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to weird facial expression, winking and smiling mischievously"'
-  - name: "Task 8 - Step 15: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 8 - Step 16: Wait for Generation"
-    type: "agent_step"
-    prompt: "Change to Use the `wait` tool for 60 seconds."
-  - name: "Task - Human Verification"
+  - name: "Task 8 - Generate First Image (Surprised)"
+    type: "run_routine"
+    routine_name: "generate_first_image_with_reference"
+    loop_with:
+      - description: "Surprised Expression"
+        prompt_text: "Change to weird facial expression, surprised with eyes wide open and mouth agape"
+  - name: "Task 8 - Generate Subsequent Images (Other Expressions)"
+    type: "run_routine"
+    routine_name: "generate_subsequent_image"
+    loop_with:
+      - description: "Silly Expression"
+        prompt_text: "Change to weird facial expression, sticking tongue out and crossing eyes"
+      - description: "Puffed Cheeks"
+        prompt_text: "Change to weird facial expression, puffing cheeks out"
+      - description: "Mischievous Wink"
+        prompt_text: "Change to weird facial expression, winking and smiling mischievously"
+  - name: "Human Verification 8"
     type: "human_intervention"
-    prompt: "Change to Task  Please verify the generated images."
+    prompt: "Please verify the four generated weird facial expressions."
+
   # --- Task 9: Random shots ---
-  - name: "Task 9 - Step 1: Paste Reference Image (Random 1)"
-    type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
-  - name: "Task 9 - Step 2: Set Random 1 Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to reading a book in a cozy library"'
-  - name: "Task 9 - Step 3: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 9 - Step 4: Wait for Generation"
-    type: "agent_step"
-    prompt: "Change to Use the `wait` tool for 60 seconds."
-  - name: "Task 9 - Step 5: Paste Reference Image (Random 2)"
-    type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
-  - name: "Task 9 - Step 6: Set Random 2 Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to hiking in the mountains"'
-  - name: "Task 9 - Step 7: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 9 - Step 8: Wait for Generation"
-    type: "agent_step"
-    prompt: "Change to Use the `wait` tool for 60 seconds."
-  - name: "Task 9 - Step 9: Paste Reference Image (Random 3)"
-    type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
-  - name: "Task 9 - Step 10: Set Random 3 Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to painting in an art studio"'
-  - name: "Task 9 - Step 11: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 9 - Step 12: Wait for Generation"
-    type: "agent_step"
-    prompt: "Change to Use the `wait` tool for 60 seconds."
-  - name: "Task 9 - Step 13: Paste Reference Image (Random 4)"
-    type: "agent_step"
-    prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`.'
-  - name: "Task 9 - Step 14: Set Random 4 Prompt"
-    type: "agent_step"
-    prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to playing a musical instrument"'
-  - name: "Task 9 - Step 15: Click Send"
-    type: "agent_step"
-    prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`.'
-  - name: "Task 9 - Step 16: Wait for Generation"
-    type: "agent_step"
-    prompt: "Change to Use the `wait` tool for 60 seconds."
-  - name: "Task - Human Verification"
+  - name: "Task 9 - Generate First Image (Reading)"
+    type: "run_routine"
+    routine_name: "generate_first_image_with_reference"
+    loop_with:
+      - description: "Reading"
+        prompt_text: "Change to reading a book in a cozy library"
+  - name: "Task 9 - Generate Subsequent Images (Other Activities)"
+    type: "run_routine"
+    routine_name: "generate_subsequent_image"
+    loop_with:
+      - description: "Hiking"
+        prompt_text: "Change to hiking in the mountains"
+      - description: "Painting"
+        prompt_text: "Change to painting in an art studio"
+      - description: "Playing Instrument"
+        prompt_text: "Change to playing a musical instrument"
+  - name: "Human Verification 9"
     type: "human_intervention"
-    prompt: "Change to Task  Please verify the generated images."
+    prompt: "Please verify the four generated random activity shots."
