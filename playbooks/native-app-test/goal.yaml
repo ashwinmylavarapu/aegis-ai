@@ -1,0 +1,82 @@
+# playbooks/native-app-test/goal.yaml
+name: "Comprehensive Native App Interaction Test"
+description: "Tests file creation, app launching with a file, focus switching, and cleanup."
+persona: "You are a testing agent."
+
+steps:
+  - name: "Create a test file"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "write_file"
+    params:
+      file_path: "/tmp/aegis_test_doc.txt"
+      content: "This is the first line, written before the focus change."
+
+  - name: "Launch TextEdit with the new file"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "launch_app"
+    params:
+      app_name: "TextEdit"
+      file_path: "/tmp/aegis_test_doc.txt"
+  
+  - name: "Wait for App to Settle"
+    type: "agent_step"
+    prompt: "wait for 2 seconds"
+
+  - name: "Append text to the opened file"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "type_text_native"
+    params:
+      app_name: "TextEdit"
+      text: "\nThis is the second line, typed by the agent."
+
+  - name: "Focus on Default App (Comet)"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "focus_app"
+    params:
+      # No app_name specified, so it uses the default from config.yaml
+      app_name: "Comet"
+
+  - name: "Invoke Comet Shortcut"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "press_key_native"
+    params:
+      key: "a"
+      modifier: "alt"
+
+  - name: "Return Focus to TextEdit"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "focus_app"
+    params:
+      app_name: "TextEdit"
+  
+  - name: "Wait and Append Final Text"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "type_text_native"
+    params:
+      app_name: "TextEdit"
+      text: "\nThis is the final line, after refocusing."
+
+  - name: "Human Verification"
+    type: "human_intervention"
+    prompt: "Please verify that TextEdit is in focus, contains all three lines of text, and the Comet sidebar is open."
+
+  - name: "Quit TextEdit"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "quit_app"
+    params:
+      app_name: "TextEdit"
+
+  - name: "Clean up the test file"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "delete_file"
+    params:
+      file_path: "/tmp/aegis_test_doc.txt"

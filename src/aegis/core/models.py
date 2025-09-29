@@ -26,7 +26,7 @@ class Step(BaseModel):
     """A single step within a playbook."""
     name: str
     type: str
-    prompt: str
+    prompt: Optional[str] = None # <-- FIX: Made this field optional
     skill_name: Optional[str] = None
     function_name: Optional[str] = None
     params: Optional[Dict[str, Any]] = None
