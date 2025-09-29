@@ -4,12 +4,12 @@ persona: "You are an AI agent that uses web tools to generate creative content."
 
 routines:
   generate_first_image_with_reference:
-    - name: "Paste Reference Image"
+    - name: "Paste Reference Image for {{params.description}}"
       type: "agent_step"
       prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`'
     - name: "Set Prompt for {{params.description}}"
       type: "agent_step"
-      prompt: '{{params.prompt_text}}' # Note: We pass the full prompt text here now
+      prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "{{params.prompt_text}}"'
     - name: "Click Send"
       type: "agent_step"
       prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`'
@@ -20,7 +20,7 @@ routines:
   generate_subsequent_image:
     - name: "Set Prompt for {{params.description}}"
       type: "agent_step"
-      prompt: '{{params.prompt_text}}' # Note: We pass the full prompt text here now
+      prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "{{params.prompt_text}}"'
     - name: "Click Send"
       type: "agent_step"
       prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`'
@@ -34,18 +34,14 @@ steps:
     prompt: "Navigate to https://gemini.google.com/u/2/app"
 
   # --- Task 1: Straight Profile Headshots ---
-  - name: "Task 1 - Generate First Image (Casual)"
+  - name: "Task 1 - Generate Images"
     type: "run_routine"
     routine_name: "generate_first_image_with_reference"
     loop_with:
       - description: "Casual Look"
-        prompt_text: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change attire to a t-shirt and jeans. Change background to home. Set evening light."'
-  - name: "Task 1 - Generate Subsequent Image (Party)"
-    type: "run_routine"
-    routine_name: "generate_subsequent_image"
-    loop_with:
+        prompt_text: "Change attire to a t-shirt and jeans. Change background to home. Set evening light."
       - description: "Party Look"
-        prompt_text: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change attire to party wear. Set home dimlit. Make her waving."'
+        prompt_text: "Change attire to party wear. Set home dimlit. Make her waving."
   - name: "Human Verification 1"
     type: "human_intervention"
     prompt: "Please verify the two generated headshot images (Casual, Party)."
@@ -56,15 +52,15 @@ steps:
     routine_name: "generate_first_image_with_reference"
     loop_with:
       - description: "Annoyed Emotion"
-        prompt_text: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to frontal view profile head shot. Change background to a park. Make her look annoyed."'
+        prompt_text: "Change to frontal view profile head shot. Change background to a park. Make her look annoyed."
   - name: "Task 2 - Generate Subsequent Images (Sad, Amused)"
     type: "run_routine"
     routine_name: "generate_subsequent_image"
     loop_with:
       - description: "Sad Emotion"
-        prompt_text: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to frontal view profile head shot. Make her look sad."'
+        prompt_text: "Change to frontal view profile head shot. Make her look sad."
       - description: "Amused Emotion"
-        prompt_text: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change to frontal view profile head shot. Change background to a park. Make her look amused."'
+        prompt_text: "Change to frontal view profile head shot. Change background to a park. Make her look amused."
   - name: "Human Verification 2"
     type: "human_intervention"
     prompt: "Please verify the three generated emotion images (Annoyed, Sad, Amused)."
@@ -75,13 +71,13 @@ steps:
     routine_name: "generate_first_image_with_reference"
     loop_with:
       - description: "Yoga Pose"
-        prompt_text: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Make it a dynamic yoga pose. Change background to home. Make her smiling."'
+        prompt_text: "Make it a dynamic yoga pose. Change background to home. Make her smiling."
   - name: "Task 3 - Generate Subsequent Image (Office)"
     type: "run_routine"
     routine_name: "generate_subsequent_image"
     loop_with:
       - description: "Office Pose"
-        prompt_text: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change attire to formal wear. Change background to an office. Make her shrugging."'
+        prompt_text: "Change attire to formal wear. Change background to an office. Make her shrugging."
   - name: "Human Verification 3"
     type: "human_intervention"
     prompt: "Please verify the two generated full-length poses (Yoga, Office)."
@@ -92,15 +88,15 @@ steps:
     routine_name: "generate_first_image_with_reference"
     loop_with:
       - description: "Crying Emotion"
-        prompt_text: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Show a crying emotion. Change background to a park."'
+        prompt_text: "Show a crying emotion. Change background to a park."
   - name: "Task 4 - Generate Subsequent Images (Saree, Kurta)"
     type: "run_routine"
     routine_name: "generate_subsequent_image"
     loop_with:
       - description: "Happy in Saree"
-        prompt_text: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Make it a waist length shot. Change attire to a saree. Change background to a park. Show a happy emotion. Make her standing."'
+        prompt_text: "Make it a waist length shot. Change attire to a saree. Change background to a park. Show a happy emotion. Make her standing."
       - description: "Sitting in Kurta"
-        prompt_text: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "Change attire to a kurta. Change background to a cafe. Make her sitting."'
+        prompt_text: "Change attire to a kurta. Change background to a cafe. Make her sitting."
   - name: "Human Verification 4"
     type: "human_intervention"
     prompt: "Please verify the final three images (Crying, Saree, Kurta)."

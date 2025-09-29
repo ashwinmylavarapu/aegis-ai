@@ -10,7 +10,7 @@ routines:
       prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`'
     - name: "Set Prompt for {{params.description}}"
       type: "agent_step"
-      prompt: 'Use the `type_text` tool to enter the prompt: "{{params.prompt_text}}"'
+      prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "{{params.prompt_text}}"'
     - name: "Click Send"
       type: "agent_step"
       prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`'
@@ -22,7 +22,7 @@ routines:
   generate_subsequent_image:
     - name: "Set Prompt for {{params.description}}"
       type: "agent_step"
-      prompt: 'Use the `type_text` tool to enter the prompt: "{{params.prompt_text}}"'
+      prompt: 'Use the `type_text` tool with selector `div.ql-editor[role="textbox"]` to enter the prompt: "{{params.prompt_text}}"'
     - name: "Click Send"
       type: "agent_step"
       prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`'

@@ -9,7 +9,6 @@ persona: "You are a testing agent verifying browser extension integration."
 steps:
   - name: "Invoke Assistant via Native Shortcut"
     type: "skill_step"
-    skill_name: "native_os"
     function_name: "press_key_native"
     params:
       key: "a"

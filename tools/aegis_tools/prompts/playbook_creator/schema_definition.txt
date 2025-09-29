@@ -1,8 +1,7 @@
 A Playbook has top-level keys: `name`, `description`, `persona`, and `steps`.
 `steps` is a list of step objects.
-
 Each Step object must have a `name` and a `type`.
 The `type` can be one of three values:
 1. `agent_step`: Use for browser tasks that require reasoning. The agent will use an LLM at runtime to decide what to do based on the `prompt`. Example prompt: "Click on the 'Login' button."
-2. `skill_step`: Use for direct, deterministic OS-level actions. This type requires `skill_name`, `function_name`, and `params`.
+2. `skill_step`: Use for direct, deterministic OS-level actions. This type requires a `function_name` and optional `params`. The `function_name` must be one of the "Available Skills".
 3. `human_intervention`: Pauses execution and waits for user confirmation. Requires a `prompt` explaining what to check.
