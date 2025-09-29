@@ -1,6 +1,6 @@
 # Aegis Automation Framework
 
-A resilient, adaptive agent for robust UI automation, now with visual intelligence.
+A resilient, adaptive agent for robust UI automation, now with visual intelligence and an enhanced developer toolset.
 
 ---
 
@@ -21,13 +21,13 @@ The framework has evolved to a visual-first architecture, significantly reducing
 
 * **👀 Eyes (The OmniParser Adapter):** The agent now *sees* the UI. It uses the `OmniParserAdapter` to run a sophisticated visual analysis script (`omni_parser.test.py`) on screenshots. This process identifies, labels, and provides coordinates for all interactive elements, turning a picture of the UI into a machine-readable format.
 * **🧠 Brain (The Orchestrator & LLM):** The cognitive core of the agent. The `Orchestrator` uses an LLM (e.g., Gemini) to interpret high-level goals from a Playbook. It then correlates these goals with the visual information from the "Eyes" to decide on the next action. It uses a `ContextManager` to manage memory and prevent getting lost in long workflows.
-* **✋ Hands (The Browser & Native Skills):** The agent executes actions through swappable adapters and skills. The `PlaywrightAdapter` can still perform traditional browser actions, but it's now complemented by native OS-level skills like `native_keyboard` and `native_screen_reader`, which can interact with the system directly, for example, to invoke a browser extension via a shortcut.
+* **✋ Hands (The Browser & Native Skills):** The agent executes actions through swappable adapters and skills. The `PlaywrightAdapter` can still perform traditional browser actions, but it's now complemented by native OS-level skills like `native_keyboard` and `native_screen_reader`, which can interact with the system directly.
 
 ### The Playbook Concept
 We do not write scripts; we write **Playbooks**. This approach enhances "developer joy" and aligns with our **Maintainability** ethos.
 
 * **Location:** All playbooks are stored in the `playbooks/` directory.
-* **Format:** A playbook is a `.yaml` file that describes a high-level objective broken down into a series of logical steps.
+* **Format:** A playbook is a `.yaml` file that describes a high-level objective broken down into a series of logical steps. It supports advanced features like **routines** and **loops** to eliminate repetition.
 * **Declarative, Not Imperative:** Playbooks describe *what* the agent should achieve in human-readable language, making them easy to write, review, and maintain.
 
 ---
@@ -76,7 +76,35 @@ We do not write scripts; we write **Playbooks**. This approach enhances "develop
 
 ---
 
-## 4. Next Steps: Reducing Tech Debt
+## 4. Developer Joy: The `aegis-tools` CLI
+
+To improve the developer experience, the framework includes a suite of command-line tools.
+
+* **Run commands from the project root:**
+    ```bash
+    PYTHONPATH=src python -m tools.aegis_tools <COMMAND>
+    ```
+
+* **Create a Playbook from a Story:**
+    Automatically generate a playbook from a natural language description. This is the recommended way to start a new playbook.
+    ```bash
+    PYTHONPATH=src python -m tools.aegis_tools playbook create --story "Launch Calculator, then quit it." --output "playbooks/new-test/goal.yaml"
+    ```
+
+* **Validate a Playbook:**
+    Check a playbook's syntax against the framework's models to catch errors early.
+    ```bash
+    PYTHONPATH=src python -m tools.aegis_tools playbook validate playbooks/new-test/goal.yaml
+    ```
+
+* **List Available Skills:**
+    Discover all the deterministic `skill_step` functions that the agent can perform.
+    ```bash
+    PYTHONPATH=src python -m tools.aegis_tools skills list
+    ```
+---
+
+## 5. Next Steps: Reducing Tech Debt
 
 Our immediate priority is to refactor the agent's core to pay down technical debt and prepare for future expansion. This work will be done on the `feature/unified-tool-registry` branch.
 
@@ -89,7 +117,5 @@ The solution is to create a single, centralized **Tool Registry** within the `Or
 ### The "How": The Refactoring Plan
 1.  **Standardize Tool Definitions:** Every adapter (`PlaywrightAdapter`, `NativeOSAdapter`, etc.) will be responsible for defining the tools it provides via a common `get_tools()` method.
 2.  **Build the Registry:** The `Orchestrator` will initialize a `ToolRegistry`. Upon startup, it will query each adapter for its tools and populate the registry. This registry will map each tool name to the adapter that owns it.
-3.  **Unify the Tool List:** The `Orchestrator` will pass the complete, unified list of all tools from the registry to the `LLMAdapter`. This will make the LLM aware of every capability the agent possesses (both browser and native).
+3.  **Unify the Tool List:** The `Orchestrator` will pass the complete, unified list of all tools from the registry to the `LLMAdapter`. This will make the LLM aware of every capability the agent possesses.
 4.  **Implement Dynamic Dispatch:** The `Orchestrator`'s `handle_tool_calls` method will be rewritten. Instead of assuming the `browser_adapter`, it will now use the `ToolRegistry` to look up the correct adapter for any given tool call and dispatch the request accordingly.
-
-This refactor will result in a clean, scalable architecture where adding new tools for the LLM to use is as simple as defining them in the appropriate adapter.

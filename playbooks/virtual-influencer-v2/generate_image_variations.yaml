@@ -1,0 +1,65 @@
+name: "Efficient Image Generation with an Initializer Routine"
+description: "Demonstrates a pattern where one routine is used to set up the session (e.g., paste a reference image), and a second routine is looped for all subsequent tasks."
+persona: "You are an AI agent that uses web tools to generate creative content."
+
+routines:
+  # Routine A: The "Initializer" - Pastes the image AND sets the first prompt.
+  generate_first_image_with_reference:
+    - name: "Paste Reference Image"
+      type: "agent_step"
+      prompt: 'Use the `paste_image` tool with selector `div.ql-editor[role="textbox"]`'
+    - name: "Set Prompt for {{params.description}}"
+      type: "agent_step"
+      prompt: 'Use the `type_text` tool to enter the prompt: "{{params.prompt_text}}"'
+    - name: "Click Send"
+      type: "agent_step"
+      prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`'
+    - name: "Wait for Generation"
+      type: "agent_step"
+      prompt: "wait for 60 seconds"
+
+  # Routine B: The "Loop Body" - Assumes the reference image is already present.
+  generate_subsequent_image:
+    - name: "Set Prompt for {{params.description}}"
+      type: "agent_step"
+      prompt: 'Use the `type_text` tool to enter the prompt: "{{params.prompt_text}}"'
+    - name: "Click Send"
+      type: "agent_step"
+      prompt: 'Use the `click` tool with selector `button[aria-label="Send message"]`'
+    - name: "Wait for Generation"
+      type: "agent_step"
+      prompt: "wait for 60 seconds"
+
+steps:
+  - name: "Navigate to Image Generator"
+    type: "agent_step"
+    prompt: "Navigate to https://gemini.google.com/app"
+
+  # 1. Run the initializer routine ONCE for the very first image.
+  - name: "Generate First Image (Casual Look)"
+    type: "run_routine"
+    routine_name: "generate_first_image_with_reference"
+    # Note: We use 'loop_with' here, even for a single item, to pass parameters.
+    loop_with:
+      - description: "Casual Look"
+        prompt_text: "Change attire to a t-shirt and jeans. Change background to home. Set evening light."
+
+  - name: "Human Verification 1"
+    type: "human_intervention"
+    prompt: "Please verify the first image (Casual) has been generated successfully."
+
+  # 2. Run the leaner, subsequent routine for all other images in a loop.
+  - name: "Generate Subsequent Images (Party and Emotions)"
+    type: "run_routine"
+    routine_name: "generate_subsequent_image"
+    loop_with:
+      - description: "Party Look"
+        prompt_text: "Change attire to party wear. Set home dimlit. Make her waving."
+      - description: "Annoyed Emotion"
+        prompt_text: "Change to frontal view profile head shot. Change background to a park. Make her look annoyed."
+      - description: "Sad Emotion"
+        prompt_text: "Change to frontal view profile head shot. Make her look sad."
+
+  - name: "Human Verification 2"
+    type: "human_intervention"
+    prompt: "Please verify the three subsequent images (Party, Annoyed, Sad) have been generated."

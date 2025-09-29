@@ -5,6 +5,7 @@ import json
 from loguru import logger
 from typing import List
 import uuid
+import copy
 
 from aegis.adapters.outbound.browser_adapter_factory import get_browser_adapter
 from aegis.adapters.outbound.llm_adapter_factory import get_llm_adapter
@@ -12,6 +13,7 @@ from aegis.adapters.outbound.omni_parser_adapter_factory import get_omni_parser_
 from aegis.adapters.outbound.native_os_adapter_factory import get_native_os_adapter
 from aegis.core.context_manager import ContextManager
 from aegis.core.models import AegisContext, Playbook, Step, ToolCall, ToolResponse, Message
+from aegis.core.models import substitute_params
 
 def step_requires_vision(step: Step) -> bool:
     if step.type != "agent_step": return False
@@ -25,10 +27,8 @@ class Orchestrator:
         self.browser_adapter = get_browser_adapter(config)
         self.llm_adapter = get_llm_adapter(config)
         self.omni_parser_adapter = get_omni_parser_adapter(config)
-        self.native_os_adapter = get_native_os_adapter(config) # New adapter
+        self.native_os_adapter = get_native_os_adapter(config)
         self.context_manager = ContextManager()
-        
-        # The old skills dictionary is now replaced by adapters
         logger.info("Orchestrator initialized with all adapters.")
 
     async def execute_playbook(self, playbook: Playbook):
@@ -41,28 +41,52 @@ class Orchestrator:
         run_log.debug("Playbook definition", definition=playbook.model_dump())
         
         for i, step in enumerate(playbook.steps):
-            step_log = run_log.bind(step_name=step.name, step_number=f"{i+1}/{len(playbook.steps)}", step_type=step.type)
-            step_log.info("--- Starting Step ---")
-            
-            aegis_context.current_step = step
-            
-            if step.type == "human_intervention": self.handle_human_intervention(step, step_log)
-            elif step.type == "skill_step": await self.execute_skill_step(step, aegis_context, step_log)
-            elif step.type == "agent_step": await self.execute_agent_step(aegis_context, step, step_log)
-            else: step_log.warning("Unknown step type detected")
+            await self.execute_step(step, aegis_context, run_log, step_number=f"{i+1}/{len(playbook.steps)}")
 
-            step_log.debug("Step completed. Current agent context snapshot.", 
-                           context_messages=[msg.model_dump(exclude_none=True) for msg in aegis_context.messages])
-                           
         run_log.info("Playbook execution finished successfully.")
         return aegis_context
+
+    async def execute_step(self, step: Step, aegis_context: AegisContext, run_log: logger, step_number: str = "N/A"):
+        """Recursive function to execute a single step or a routine."""
+        step_log = run_log.bind(step_name=step.name, step_number=step_number, step_type=step.type)
+        step_log.info("--- Starting Step ---")
+        
+        aegis_context.current_step = step
+        
+        if step.type == "human_intervention": self.handle_human_intervention(step, step_log)
+        elif step.type == "skill_step": await self.execute_skill_step(step, aegis_context, step_log)
+        elif step.type == "agent_step": await self.execute_agent_step(aegis_context, step, step_log)
+        elif step.type == "run_routine": await self.execute_routine(step, aegis_context, step_log)
+        else: step_log.warning("Unknown step type detected")
+
+        step_log.debug("Step completed. Current agent context snapshot.", 
+                       context_messages=[msg.model_dump(exclude_none=True) for msg in aegis_context.messages])
+
+    async def execute_routine(self, step: Step, aegis_context: AegisContext, step_log: logger):
+        """Handles the execution of a routine, including looping."""
+        if not step.routine_name or not aegis_context.playbook.routines or step.routine_name not in aegis_context.playbook.routines:
+            step_log.error(f"Routine '{step.routine_name}' not found in playbook definitions.")
+            return
+
+        routine_template = aegis_context.playbook.routines[step.routine_name]
+        param_sets = step.loop_with if step.loop_with else [{}]
+
+        for i, params in enumerate(param_sets):
+            loop_log = step_log.bind(loop_iteration=f"{i+1}/{len(param_sets)}", loop_params=params)
+            loop_log.info(f"Running routine '{step.routine_name}'")
+            
+            for j, routine_step_template in enumerate(routine_template):
+                step_instance_data = routine_step_template.model_dump()
+                substituted_data = substitute_params(step_instance_data, params)
+                step_instance = Step(**substituted_data)
+                await self.execute_step(step_instance, aegis_context, loop_log, step_number=f"Routine Step {j+1}/{len(routine_template)}")
 
     async def execute_agent_step(self, aegis_context: AegisContext, step: Step, step_log: logger):
         requires_vision = step_requires_vision(step)
         step_log.debug("Executing agent step", requires_vision=requires_vision)
 
         if requires_vision:
-            pass # Vision logic placeholder
+            pass
         else:
             aegis_context.messages.append(Message(role="user", content=step.prompt))
 
@@ -80,13 +104,9 @@ class Orchestrator:
 
     async def execute_skill_step(self, step: Step, aegis_context: AegisContext, step_log: logger):
         step_log.debug("Executing skill", adapter_name=step.skill_name, function_name=step.function_name, params=step.params)
-        
         adapter = None
         if step.skill_name == "native_os":
             adapter = self.native_os_adapter
-        # Add other adapters here if they expose skill-like methods in the future
-        # elif step.skill_name == "browser":
-        #     adapter = self.browser_adapter
 
         if not adapter or not hasattr(adapter, step.function_name):
             error_msg = f"Function '{step.function_name}' not found in adapter '{step.skill_name}'."
@@ -106,7 +126,6 @@ class Orchestrator:
     async def handle_tool_calls(self, tool_calls: list[ToolCall], aegis_context: AegisContext, step_log: logger):
         step_log.debug(f"Handling {len(tool_calls)} tool calls.")
         tool_responses = []
-        # For now, we assume all LLM tool calls go to the browser adapter
         adapter = self.browser_adapter
         
         for call in tool_calls:
