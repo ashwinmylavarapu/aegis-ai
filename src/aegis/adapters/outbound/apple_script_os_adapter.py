@@ -5,8 +5,9 @@ import os
 from pathlib import Path
 from datetime import datetime
 from loguru import logger
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import asyncio
+import re
 
 from .native_os_adapter import NativeOSAdapter
 
@@ -37,14 +38,11 @@ class AppleScriptOSAdapter(NativeOSAdapter):
         """Launches an application, optionally opening a specific file."""
         func_log = log.bind(function_name="launch_app", params={"app_name": app_name, "file_path": file_path})
         await self._capture_desktop_evidence(f"launch_{app_name}", "before")
-
         script = ""
         if file_path:
             abs_path = os.path.abspath(file_path)
             script = f'tell application "{app_name}" to open POSIX file "{abs_path}"\n'
-        
         script += f'tell application "{app_name}" to activate'
-
         try:
             func_log.info(f"Launching and activating '{app_name}'...")
             subprocess.run(["osascript", "-e", script], check=True, capture_output=True, text=True)
@@ -54,21 +52,6 @@ class AppleScriptOSAdapter(NativeOSAdapter):
             func_log.error("Failed to launch application", stderr=e.stderr)
             await self._capture_desktop_evidence(f"launch_{app_name}", "error")
             return f"Error launching '{app_name}': {e.stderr}"
-
-    async def focus_app(self, app_name: str) -> str:
-        """Brings an already-running application to the foreground."""
-        func_log = log.bind(function_name="focus_app", params={"app_name": app_name})
-        await self._capture_desktop_evidence(f"focus_{app_name}", "before")
-        script = f'tell application "{app_name}" to activate'
-        try:
-            func_log.info(f"Changing focus to '{app_name}'...")
-            subprocess.run(["osascript", "-e", script], check=True, capture_output=True, text=True)
-            await self._capture_desktop_evidence(f"focus_{app_name}", "after")
-            return f"Successfully focused on '{app_name}'."
-        except subprocess.CalledProcessError as e:
-            func_log.error("Failed to focus application", stderr=e.stderr)
-            await self._capture_desktop_evidence(f"focus_{app_name}", "error")
-            return f"Error focusing on '{app_name}': {e.stderr}"
 
     async def quit_app(self, app_name: str) -> str:
         """Quits an application."""
@@ -81,6 +64,71 @@ class AppleScriptOSAdapter(NativeOSAdapter):
         except subprocess.CalledProcessError as e:
             func_log.error("Failed to quit application", stderr=e.stderr)
             return f"Error quitting '{app_name}': {e.stderr}"
+
+    async def list_windows(self, app_name: str) -> List[str]:
+        """Lists the titles of all open windows for a given application."""
+        func_log = log.bind(function_name="list_windows", params={"app_name": app_name})
+        script = f'tell application "System Events" to get name of every window of process "{app_name}"'
+        try:
+            func_log.info(f"Listing windows for '{app_name}'...")
+            result = subprocess.run(["osascript", "-e", script], check=True, capture_output=True, text=True)
+            window_list = [name.strip() for name in result.stdout.strip().split(',') if name.strip()]
+            func_log.info(f"Found windows: {window_list}")
+            return window_list
+        except subprocess.CalledProcessError as e:
+            func_log.error("Failed to list windows", stderr=e.stderr)
+            return []
+
+    async def focus_window(self, app_name: str, window_title: str) -> str:
+        """Brings a specific window of an application to the foreground."""
+        func_log = log.bind(function_name="focus_window", params={"app_name": app_name, "window_title": window_title})
+        await self._capture_desktop_evidence(f"focus_window_{app_name}", "before")
+        script = f'tell application "System Events" to perform action "AXRaise" of window "{window_title}" of process "{app_name}"'
+        try:
+            func_log.info(f"Focusing window '{window_title}' for app '{app_name}'...")
+            subprocess.run(["osascript", "-e", script], check=True, capture_output=True, text=True)
+            await self._capture_desktop_evidence(f"focus_window_{app_name}", "after")
+            return f"Successfully focused on window '{window_title}'."
+        except subprocess.CalledProcessError as e:
+            func_log.error("Failed to focus window", stderr=e.stderr)
+            await self._capture_desktop_evidence(f"focus_window_{app_name}", "error")
+            return f"Error focusing window '{window_title}': {e.stderr}"
+
+    async def get_window_bounds(self, app_name: str, window_title: str) -> Dict[str, int]:
+        """Gets the position and size of a specific window."""
+        func_log = log.bind(function_name="get_window_bounds", params={"app_name": app_name, "window_title": window_title})
+        script = f'tell application "System Events" to get {{position, size}} of window "{window_title}" of process "{app_name}"'
+        try:
+            result = subprocess.run(["osascript", "-e", script], check=True, capture_output=True, text=True)
+            nums = [int(n) for n in re.findall(r'-?\d+', result.stdout)]
+            bounds = {"x": nums[0], "y": nums[1], "width": nums[2], "height": nums[3]}
+            func_log.info(f"Got window bounds: {bounds}")
+            return bounds
+        except (subprocess.CalledProcessError, IndexError, ValueError) as e:
+            func_log.error("Failed to get window bounds", error=str(e))
+            return {}
+
+    async def set_window_bounds(self, app_name: str, window_title: str, x: Optional[int] = None, y: Optional[int] = None, width: Optional[int] = None, height: Optional[int] = None) -> str:
+        """Moves and/or resizes a specific window."""
+        func_log = log.bind(function_name="set_window_bounds", params={"app_name": app_name, "window_title": window_title, "x": x, "y": y, "width": width, "height": height})
+        await self._capture_desktop_evidence(f"set_bounds_{app_name}", "before")
+        scripts = []
+        if x is not None and y is not None:
+            scripts.append(f'set position of window "{window_title}" of process "{app_name}" to {{{x}, {y}}}')
+        if width is not None and height is not None:
+            scripts.append(f'set size of window "{window_title}" of process "{app_name}" to {{{width}, {height}}}')
+        if not scripts:
+            return "No position or size parameters provided; no action taken."
+        full_script = f'tell application "System Events"\n' + "\n".join(scripts) + f'\nend tell'
+        try:
+            func_log.info(f"Setting bounds for window '{window_title}'...")
+            subprocess.run(["osascript", "-e", full_script], check=True, capture_output=True, text=True)
+            await self._capture_desktop_evidence(f"set_bounds_{app_name}", "after")
+            return f"Successfully set bounds for window '{window_title}'."
+        except subprocess.CalledProcessError as e:
+            func_log.error("Failed to set window bounds", stderr=e.stderr)
+            await self._capture_desktop_evidence(f"set_bounds_{app_name}", "error")
+            return f"Error setting window bounds: {e.stderr}"
 
     async def write_file(self, file_path: str, content: str) -> str:
         """Writes content to a local file using Python's Pathlib."""

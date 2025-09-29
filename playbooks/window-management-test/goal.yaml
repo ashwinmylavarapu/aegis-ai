@@ -1,0 +1,63 @@
+# playbooks/window-management-test/goal.yaml
+name: "Test Granular Window Management"
+description: "Tests listing, focusing, getting bounds, and setting bounds for specific windows."
+persona: "You are a testing agent."
+
+steps:
+  - name: "Launch TextEdit"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "launch_app"
+    params:
+      app_name: "TextEdit"
+
+  - name: "Create New Document (Command+N)"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "press_key_native"
+    params:
+      app_name: "TextEdit"
+      key: "n"
+      modifier: "command"
+  
+  - name: "Wait for New Window"
+    type: "agent_step"
+    prompt: "wait for 2 seconds"
+  
+  - name: "List Windows of TextEdit"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "list_windows"
+    params:
+      app_name: "TextEdit"
+      
+  - name: "Get Bounds of the new Untitled window"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "get_window_bounds"
+    params:
+      app_name: "TextEdit"
+      window_title: "Untitled"
+
+  - name: "Move and Resize the Untitled window"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "set_window_bounds"
+    params:
+      app_name: "TextEdit"
+      window_title: "Untitled"
+      x: 100
+      y: 100
+      width: 800
+      height: 600
+
+  - name: "Human Verification"
+    type: "human_intervention"
+    prompt: "Please verify that a new, larger TextEdit window titled 'Untitled' is at the top-left of the screen. The agent's context should contain the list of windows and the window's original bounds."
+
+  - name: "Quit TextEdit"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "quit_app"
+    params:
+      app_name: "TextEdit"

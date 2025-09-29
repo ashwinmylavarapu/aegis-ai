@@ -1,25 +1,43 @@
 # src/aegis/adapters/outbound/native_os_adapter.py
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Tuple
 
 class NativeOSAdapter(ABC):
     """Abstract base class for native operating system interactions."""
 
+    # ... (launch_app, quit_app remain the same)
     @abstractmethod
     async def launch_app(self, app_name: str, file_path: Optional[str] = None) -> str:
         """Launches a native application, optionally opening a file."""
-        pass
-    
-    @abstractmethod
-    async def focus_app(self, app_name: str) -> str:
-        """Brings an already-running application to the foreground."""
         pass
 
     @abstractmethod
     async def quit_app(self, app_name: str) -> str:
         """Quits a native application."""
         pass
+
+    # Window Management
+    @abstractmethod
+    async def list_windows(self, app_name: str) -> List[str]:
+        """Lists the titles of all open windows for a given application."""
+        pass
     
+    @abstractmethod
+    async def focus_window(self, app_name: str, window_title: str) -> str:
+        """Brings a specific window of an application to the foreground."""
+        pass
+
+    @abstractmethod
+    async def get_window_bounds(self, app_name: str, window_title: str) -> Dict[str, int]:
+        """Gets the position and size (x, y, width, height) of a specific window."""
+        pass
+
+    @abstractmethod
+    async def set_window_bounds(self, app_name: str, window_title: str, x: Optional[int] = None, y: Optional[int] = None, width: Optional[int] = None, height: Optional[int] = None) -> str:
+        """Moves and/or resizes a specific window."""
+        pass
+
+    # ... (file, keyboard, and screen methods remain the same)
     @abstractmethod
     async def write_file(self, file_path: str, content: str) -> str:
         """Writes content to a local file."""

@@ -1,7 +1,6 @@
-
 # Aegis Automation Framework
 
-A resilient, adaptive agent for robust UI automation.
+A resilient, adaptive agent for robust UI automation, now with visual intelligence.
 
 ---
 
@@ -10,64 +9,26 @@ A resilient, adaptive agent for robust UI automation.
 ### The Problem: Brittle UI Automation
 Traditional UI automation is fundamentally fragile. Scripts are tightly coupled to the Document Object Model (DOM) through CSS selectors and XPaths. When a developer refactors the front-end—even for a minor style change—these selectors break, causing automation to fail. This leads to constant, expensive maintenance, flaky tests, and a lack of trust in automated processes.
 
-### The Mission: A Resilient, Adaptive Agent
-The Aegis Framework is designed to solve this problem by creating a robust automation agent that can adapt to change. Our mission is a two-phase journey:
-
-1.  **Perfect the DOM-based Agent:** First, we've built a highly resilient agent that mitigates the fragility of the DOM. By decomposing complex goals into manageable tasks and equipping the agent with a persistent **checklist memory**, it can reliably execute multi-step workflows without getting lost or stuck in loops.
-2.  **Evolve to a Visual Agent:** The ultimate goal is to make the agent **self-healing** by giving it vision. The next evolution of Aegis will use a multimodal model to *see* and *understand* a UI like a human, making it almost completely immune to underlying code changes.
+### The Mission: A Resilient, Self-Healing Agent
+The Aegis Framework is designed to solve this problem by creating a robust automation agent that can see and adapt to change. Our mission is to build a **self-healing** agent by giving it vision, making it almost completely immune to underlying code changes.
 
 ---
 
 ## 2. The "What": Core Concepts & Architecture
 
-### Core Architecture: Checklist-Driven Cognition
-The framework is built on Hexagonal Architecture principles, centered around an intelligent orchestrator that uses a stateful memory to guide its reasoning.
+### Core Architecture: Eyes, Brain, Hands
+The framework has evolved to a visual-first architecture, significantly reducing reliance on brittle selectors.
 
-* **Orchestrator (The Brain):** The cognitive core of the agent. It uses an LLM (e.g., Gemini) to interpret high-level goals from a Playbook and decide on the next action.
-* **Persistent Memory (The Checklist):** To prevent loops and combat context window limitations, the agent maintains a stateful **checklist** of completed actions for each task. Before thinking, the agent is always reminded of what it has already accomplished, allowing it to make accurate decisions even with a limited short-term memory (the LLM's chat history).
-* **Adapters (The Hands):** Following the Ports and Adapters pattern, all external interactions are handled by swappable adapters. The primary adapter is the `PlaywrightAdapter`, which executes commands like `click` and `type_text` in the browser.
+* **👀 Eyes (The OmniParser Adapter):** The agent now *sees* the UI. It uses the `OmniParserAdapter` to run a sophisticated visual analysis script (`omni_parser.test.py`) on screenshots. This process identifies, labels, and provides coordinates for all interactive elements, turning a picture of the UI into a machine-readable format.
+* **🧠 Brain (The Orchestrator & LLM):** The cognitive core of the agent. The `Orchestrator` uses an LLM (e.g., Gemini) to interpret high-level goals from a Playbook. It then correlates these goals with the visual information from the "Eyes" to decide on the next action. It uses a `ContextManager` to manage memory and prevent getting lost in long workflows.
+* **✋ Hands (The Browser & Native Skills):** The agent executes actions through swappable adapters and skills. The `PlaywrightAdapter` can still perform traditional browser actions, but it's now complemented by native OS-level skills like `native_keyboard` and `native_screen_reader`, which can interact with the system directly, for example, to invoke a browser extension via a shortcut.
 
 ### The Playbook Concept
 We do not write scripts; we write **Playbooks**. This approach enhances "developer joy" and aligns with our **Maintainability** ethos.
 
 * **Location:** All playbooks are stored in the `playbooks/` directory.
-* **Format:** A playbook is a `.yaml` file that describes a high-level objective broken down into a series of logical tasks.
-* **Declarative, Not Imperative:** Playbooks describe *what* the agent should achieve in human-readable language. This makes them easy to write, review, and maintain.
-
-### Directory & File Structure
-The project is organized to separate concerns, making it easy to navigate and extend.
-
-```
-
-.
-├── playbooks/                \# Contains all high-level automation plans (Playbooks).
-│   ├── character-sheet-base/
-│   │   └── goal.yaml
-│   └── character-sheet-extended/
-│       └── goal\_lighting\_and\_angles.yaml
-│
-├── src/
-│   └── aegis/
-│       ├── adapters/           \# Hexagonal pattern: all outbound communication.
-│       │   ├── outbound/
-│       │   │   ├── playwright\_adapter.py  \# The "Hands" - controls the browser.
-│       │   │   └── google\_genai\_adapter.py  \# Connects to the LLM.
-│       │
-│       ├── core/               \# The heart of the agent.
-│       │   ├── orchestrator.py \# The "Brain" - manages the agent's state and loop.
-│       │   ├── models.py       \# Pydantic models for state, goals, and plans.
-│       │   └── context\_manager.py \# The safety net for context window management.
-│       │
-│       ├── skills/             \# Reusable, complex business logic functions.
-│       │
-│       └── main.py             \# The application's main entry point.
-│
-├── config.yaml               \# Your local configuration (API keys, endpoints).
-├── example\_config.yaml       \# A template for configuration.
-├── requirements.txt          \# Project dependencies.
-└── scorecard.yaml            \# Production readiness checklist (enforced by ethos).
-
-````
+* **Format:** A playbook is a `.yaml` file that describes a high-level objective broken down into a series of logical steps.
+* **Declarative, Not Imperative:** Playbooks describe *what* the agent should achieve in human-readable language, making them easy to write, review, and maintain.
 
 ---
 
@@ -115,13 +76,20 @@ The project is organized to separate concerns, making it easy to navigate and ex
 
 ---
 
-## 4. The Future: A Self-Healing Visual Agent
+## 4. Next Steps: Reducing Tech Debt
 
-The ultimate vision for Aegis is to eliminate the final piece of brittle logic—CSS selectors—by giving the agent **vision**. This future architecture is called **"Eyes, Brain, Hands"**.
+Our immediate priority is to refactor the agent's core to pay down technical debt and prepare for future expansion. This work will be done on the `feature/unified-tool-registry` branch.
 
-* **Eyes (The Visual Adapter):** A future component that will use a multimodal model (like **Microsoft OmniParser**) to *see* the UI. It will take a screenshot and return a labeled list of all interactive elements and their coordinates.
-* **Brain (Upgraded):** The agent's brain will be upgraded to correlate the playbook's human-like instructions (e.g., "click the send button") with the visual labels provided by the "Eyes."
-* **Hands (Upgraded):** The hands will learn new skills to act on visual cues, such as `click_element(label='e3')`, which will click coordinates instead of selectors.
+### The "Why": An Architectural Flaw
+As we've added new capabilities like the `NativeOSAdapter`, we've uncovered an architectural flaw: the agent's LLM "brain" cannot see or use any tools outside of the browser. This is because the tool list is hardcoded in the `LLMAdapter`, and the tool execution logic is hardcoded in the `Orchestrator`. This severely limits the agent's autonomy and violates our "Automate Everything" ethos.
 
-This will make our playbooks 100% declarative and create a truly self-healing system that is almost completely immune to front-end code changes. This is the project's primary strategic goal.
-````
+### The "What": A Unified Tool Registry
+The solution is to create a single, centralized **Tool Registry** within the `Orchestrator`. This registry will be the single source of truth for all actions the agent can perform, regardless of which adapter provides them.
+
+### The "How": The Refactoring Plan
+1.  **Standardize Tool Definitions:** Every adapter (`PlaywrightAdapter`, `NativeOSAdapter`, etc.) will be responsible for defining the tools it provides via a common `get_tools()` method.
+2.  **Build the Registry:** The `Orchestrator` will initialize a `ToolRegistry`. Upon startup, it will query each adapter for its tools and populate the registry. This registry will map each tool name to the adapter that owns it.
+3.  **Unify the Tool List:** The `Orchestrator` will pass the complete, unified list of all tools from the registry to the `LLMAdapter`. This will make the LLM aware of every capability the agent possesses (both browser and native).
+4.  **Implement Dynamic Dispatch:** The `Orchestrator`'s `handle_tool_calls` method will be rewritten. Instead of assuming the `browser_adapter`, it will now use the `ToolRegistry` to look up the correct adapter for any given tool call and dispatch the request accordingly.
+
+This refactor will result in a clean, scalable architecture where adding new tools for the LLM to use is as simple as defining them in the appropriate adapter.
