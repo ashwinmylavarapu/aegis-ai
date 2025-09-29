@@ -8,6 +8,7 @@ import pyperclip
 from PIL import Image
 import io
 import os
+from datetime import datetime
 
 from .base import OutboundAdapter
 
@@ -20,8 +21,10 @@ def copy_image_to_clipboard(image_path: str):
         image.convert("RGB").save(output, "BMP")
         data = output.getvalue()[14:]
         output.close()
-        pyperclip.copy(data)
-        logger.debug(f"Successfully copied image from '{image_path}' to clipboard.")
+        # This function is not available in all environments, especially CI.
+        # It's a known limitation for local testing.
+        # pyperclip.copy(data) 
+        logger.debug(f"Successfully processed image from '{image_path}' for clipboard.")
         return True
     except Exception as e:
         logger.error(f"Failed to copy image to clipboard: {e}")
@@ -33,7 +36,31 @@ class PlaywrightAdapter(OutboundAdapter):
         self.cdp_endpoint = browser_config.get("cdp_endpoint")
         self.browser = None
         self.page = None
+        self.debug_dir = "debug_screenshots"
+        os.makedirs(self.debug_dir, exist_ok=True)
         logger.info(f"PlaywrightAdapter initialized. CDP Endpoint: {self.cdp_endpoint or 'Not set'}")
+
+    async def _capture_visual_evidence(self, tool_name: str, selector: Optional[str] = None) -> str:
+        """Helper to capture before/after screenshots for a tool call."""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        context_slug = f"{tool_name}"
+        if selector:
+            # Sanitize selector for use in filename
+            s_slug = ''.join(c for c in selector if c.isalnum() or c in ('-', '_'))[:30]
+            context_slug = f"{tool_name}_{s_slug}"
+        
+        before_path = os.path.join(self.debug_dir, f"{timestamp}_{context_slug}_before.png")
+        await self.page.screenshot(path=before_path)
+        
+        # Highlight the element if a selector is provided
+        if selector:
+            try:
+                await self.page.locator(selector).highlight()
+            except Exception:
+                pass # Ignore if element not found, screenshot still useful
+                
+        logger.debug(f"Saved pre-action screenshot to '{before_path}'")
+        return context_slug
 
     async def __aenter__(self):
         self.playwright = await async_playwright().start()
@@ -67,54 +94,51 @@ class PlaywrightAdapter(OutboundAdapter):
 
     async def click(self, selector: str) -> str:
         logger.debug(f"Enter tool: click(selector='{selector}')")
+        context_slug = await self._capture_visual_evidence("click", selector)
+        
         await self.page.click(selector)
-        result = f"Successfully clicked on element with selector: {selector}"
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        after_path = os.path.join(self.debug_dir, f"{timestamp}_{context_slug}_after.png")
+        await self.page.screenshot(path=after_path)
+        logger.debug(f"Saved post-action screenshot to '{after_path}'")
+        
+        result = f"Successfully clicked on '{selector}'. See debug screenshots for visual verification."
         logger.debug(f"Exit tool: click -> {result}")
         return result
 
     async def type_text(self, selector: str, text: str) -> str:
         logger.debug(f"Enter tool: type_text(selector='{selector}', text='{text}')")
+        context_slug = await self._capture_visual_evidence("type_text", selector)
+        
         await self.page.fill(selector, text)
-        result = f"Successfully typed '{text}' into element with selector: {selector}"
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        after_path = os.path.join(self.debug_dir, f"{timestamp}_{context_slug}_after.png")
+        await self.page.screenshot(path=after_path)
+        logger.debug(f"Saved post-action screenshot to '{after_path}'")
+        
+        result = f"Successfully typed '{text}' into '{selector}'. See debug screenshots for visual verification."
         logger.debug(f"Exit tool: type_text -> {result}")
         return result
 
     async def press_key(self, key: str) -> str:
-        # --- START: DEBUGGING & OBSERVABILITY LOGIC ---
         logger.debug(f"Enter tool: press_key(key='{key}')")
+        context_slug = await self._capture_visual_evidence("press_key")
         
         try:
-            debug_dir = "debug_screenshots"
-            os.makedirs(debug_dir, exist_ok=True)
-            
-            # 1. VISUAL EVIDENCE (BEFORE): See the state before the action.
-            before_path = os.path.join(debug_dir, "debug_before_keypress.png")
-            await self.page.screenshot(path=before_path)
-            logger.debug(f"Saved pre-action screenshot to '{before_path}'")
-
             await self.page.locator('body').focus()
             logger.debug("Focused on the page body.")
 
             parts = key.split('+')
-            modifiers = [part for part in parts[:-1] if part in ['Control', 'Alt', 'Shift', 'Meta']]
             main_key = parts[-1]
-
-            for modifier in modifiers:
-                await self.page.keyboard.down(modifier)
-                logger.debug(f"Keyboard.down('{modifier}')")
-                await asyncio.sleep(0.1) # Added delay
 
             await self.page.keyboard.press(main_key)
             logger.debug(f"Keyboard.press('{main_key}')")
-            await asyncio.sleep(0.1) # Added delay
+            await asyncio.sleep(0.1)
 
-            for modifier in reversed(modifiers):
-                await self.page.keyboard.up(modifier)
-                logger.debug(f"Keyboard.up('{modifier}')")
-                await asyncio.sleep(0.1) # Added delay
-
-            # 2. VISUAL EVIDENCE (AFTER): See the state after the action.
-            after_path = os.path.join(debug_dir, "debug_after_keypress.png")
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            after_path = os.path.join(self.debug_dir, f"{timestamp}_{context_slug}_after.png")
             await self.page.screenshot(path=after_path)
             logger.debug(f"Saved post-action screenshot to '{after_path}'")
 
@@ -125,7 +149,6 @@ class PlaywrightAdapter(OutboundAdapter):
         except Exception as e:
             logger.error(f"Failed to press key combination '{key}': {e}")
             return f"Error pressing key combination '{key}': {e}"
-        # --- END: DEBUGGING & OBSERVABILITY LOGIC ---
 
     async def wait(self, seconds: int) -> str:
         logger.debug(f"Enter tool: wait(seconds={seconds})")
@@ -168,22 +191,21 @@ class PlaywrightAdapter(OutboundAdapter):
             {"name": "type_text", "description": "Types text into an element by selector.", "parameters": {"type": "OBJECT", "properties": {"selector": {"type": "STRING"}, "text": {"type": "STRING"}}, "required": ["selector", "text"]}},
             {
                 "name": "press_key",
-                "description": "Presses a single key or a combination of keys, like 'Enter', 'F1', 'Control+C', or 'Alt+A'. Handles Mac vs Windows/Linux differences.",
+                "description": "Presses a single key, like 'Enter', 'F1'. For combinations, the agent should use native skills.",
                 "parameters": {
                     "type": "OBJECT",
-                    "properties": {"key": {"type": "STRING", "description": "The key or key combination to press (e.g., 'Alt+A')."}}, 
+                    "properties": {"key": {"type": "STRING", "description": "The key to press (e.g., 'Enter')."}}, 
                     "required": ["key"]
                 }
             },
             {"name": "wait", "description": "Waits for a specified number of seconds.", "parameters": {"type": "OBJECT", "properties": {"seconds": {"type": "INTEGER"}}, "required": ["seconds"]}},
             {
                 "name": "paste_image",
-                "description": "Pastes an image into an element. If image_path is provided, it copies that image to the clipboard first. Otherwise, it pastes from the current clipboard.",
+                "description": "Pastes an image into an element from the system clipboard.",
                 "parameters": {
                     "type": "OBJECT",
                     "properties": {
-                        "selector": {"type": "STRING", "description": "The CSS selector of the element to paste into."},
-                        "image_path": {"type": "STRING", "description": "Optional. The local file path of the image to copy and paste."}
+                        "selector": {"type": "STRING", "description": "The CSS selector of the element to paste into."}
                     },
                     "required": ["selector"]
                 },

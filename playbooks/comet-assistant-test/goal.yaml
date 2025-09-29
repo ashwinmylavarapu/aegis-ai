@@ -1,3 +1,4 @@
+# playbooks/comet-assistant-test/goal.yaml
 name: "Test Native Key Press for Comet Extension"
 description: "Tests triggering the Comet browser extension via a native OS-level key press."
 persona: "You are a testing agent verifying browser extension integration."
@@ -6,7 +7,7 @@ steps:
   - name: "Invoke Comet Assistant via Native Shortcut"
     type: "skill_step"
     prompt: "This step uses a native OS skill to press Alt+A to activate the Comet browser extension."
-    skill_name: "native_keyboard"
+    skill_name: "native_os" # <-- CHANGED
     function_name: "press_key_native"
     params:
       key: "a"

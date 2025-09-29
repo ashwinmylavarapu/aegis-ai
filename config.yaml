@@ -29,4 +29,7 @@ omni_parser_adapter:
   script_path: "scripts/omni_parser.test.py"
   workdir: "scripts/workdir" # Directory where models and outputs are stored
 
+native_os:
+  target_app: "Comet" # The application to activate for native key presses
+
 
