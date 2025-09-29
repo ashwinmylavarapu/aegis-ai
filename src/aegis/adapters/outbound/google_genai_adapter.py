@@ -6,7 +6,7 @@ from google.generativeai.types import content_types
 from loguru import logger
 
 from aegis.core.models import Message, ToolCall
-from aegis.core.context_manager import ContextTrimmer # Import the trimmer
+from aegis.core.context_manager import ContextTrimmer
 from aegis.adapters.outbound.playwright_adapter import PlaywrightAdapter
 from .base import LLMAdapter
 
@@ -16,7 +16,7 @@ You must choose one and only one tool to accomplish the user's goal.
 """
 
 class GoogleGenAIAdapter(LLMAdapter):
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: Dict[str, Any], load_tools: bool = True):
         llm_config = config.get("llm", {}).get("google_genai", {})
         api_key = llm_config.get("api_key")
         model_name = llm_config.get("model", "gemini-1.5-flash-latest")
@@ -24,26 +24,34 @@ class GoogleGenAIAdapter(LLMAdapter):
         if not api_key:
             raise ValueError("API key for Google GenAI is missing from config.yaml")
 
+        # --- DEBUGGING STEP ---
+        # Log the beginning and end of the API key to verify it's being loaded correctly.
+        # This is safe and does not expose the full key in logs.
+        key_preview = f"{api_key[:4]}...{api_key[-4:]}" if len(api_key) > 8 else "key is too short to preview"
+        logger.debug(f"Attempting to configure Google GenAI with API key preview: {key_preview}")
+        # --- END DEBUGGING STEP ---
+
         genai.configure(api_key=api_key)
         
-        tools = PlaywrightAdapter.get_tools()
-        # No need to log tools here, it's too verbose for every run.
-        
+        tool_definitions = None
+        if load_tools:
+            tool_definitions = PlaywrightAdapter.get_tools()
+            logger.debug(f"Initializing Google GenAI model WITH tools: {json.dumps(tool_definitions, indent=2)}")
+        else:
+            logger.debug("Initializing Google GenAI model WITHOUT tools (text-generation only).")
+
         self.model = genai.GenerativeModel(
             model_name,
-            tools=tools,
-            system_instruction=SYSTEM_INSTRUCTION,
+            tools=tool_definitions,
+            system_instruction=SYSTEM_INSTRUCTION if load_tools else None,
         )
-        # Initialize the context trimmer with the main config
         self.trimmer = ContextTrimmer(config)
         logger.info(f"GoogleGenAIAdapter initialized with model: {model_name}")
 
     async def chat_completion(self, messages: List[Message]) -> Message:
-        # --- FIX: Trim the context BEFORE processing and logging ---
         trimmed_messages = self.trimmer.trim(messages)
         history = self._format_messages_for_google(trimmed_messages)
         
-        # --- ENHANCED OBSERVABILITY ---
         try:
             token_count = await self.model.count_tokens_async(history)
             logger.debug(
@@ -55,12 +63,9 @@ class GoogleGenAIAdapter(LLMAdapter):
         except Exception as e:
             logger.error(f"Fatal: Could not calculate token count before sending. Error: {e}")
             logger.debug(f"History that failed token count: {json.dumps(history, indent=2, default=str)}")
-            raise # Re-raise the exception to halt execution, as this is a critical failure.
-        
-        # The history for the chat model should be all but the last message
+            raise
+
         chat = self.model.start_chat(history=history[:-1])
-        
-        # The last message is the one we are sending
         response = await chat.send_message_async(history[-1]['parts'])
 
         logger.debug(f"Raw LLM response object:\n{response}")

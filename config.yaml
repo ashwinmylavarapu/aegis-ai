@@ -32,4 +32,12 @@ omni_parser_adapter:
 native_os:
   target_app: "Comet" # The application to activate for native key presses
 
+tools:
+  llm:
+    provider: "google_genai_studio"
+    google_genai:
+      # This model will be used for code generation tasks in aegis-tools.
+      # You can switch this to a different model like "gemini-1.5-pro-latest" or others as needed.
+      model: "gemini-2.5-flash"
+      api_key: "AIzaSyAUQhDu4_Y8wLjmFXN9gWhlDCJ3-Dey4-s" # Can be the same or different key
 

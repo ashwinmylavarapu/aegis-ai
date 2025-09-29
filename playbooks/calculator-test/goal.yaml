@@ -1,0 +1,17 @@
+name: "Launch and Quit Calculator App"
+description: "Demonstrates launching the native calculator application and then immediately quitting it."
+persona: "You are an automation agent managing system applications."
+steps:
+  - name: "Launch Calculator"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "launch_app"
+    params:
+      app_name: "Calculator"
+      file_path: null # file_path is optional, set to null if not needed
+  - name: "Quit Calculator"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "quit_app"
+    params:
+      app_name: "Calculator"
