@@ -7,7 +7,6 @@ from loguru import logger
 
 from aegis.core.models import Message, ToolCall
 from aegis.core.context_manager import ContextTrimmer
-from aegis.adapters.outbound.playwright_adapter import PlaywrightAdapter
 from .base import LLMAdapter
 
 SYSTEM_INSTRUCTION = """
@@ -16,7 +15,7 @@ You must choose one and only one tool to accomplish the user's goal.
 """
 
 class GoogleGenAIAdapter(LLMAdapter):
-    def __init__(self, config: Dict[str, Any], load_tools: bool = True):
+    def __init__(self, config: Dict[str, Any], tools: List[Dict[str, Any]] = None):
         llm_config = config.get("llm", {}).get("google_genai", {})
         api_key = llm_config.get("api_key")
         model_name = llm_config.get("model", "gemini-1.5-flash-latest")
@@ -31,19 +30,18 @@ class GoogleGenAIAdapter(LLMAdapter):
         logger.debug(f"Attempting to configure Google GenAI with API key preview: {key_preview}")
         # --- END DEBUGGING STEP ---
 
+
         genai.configure(api_key=api_key)
         
-        tool_definitions = None
-        if load_tools:
-            tool_definitions = PlaywrightAdapter.get_tools()
-            logger.debug(f"Initializing Google GenAI model WITH tools: {json.dumps(tool_definitions, indent=2)}")
+        if tools:
+            logger.debug(f"Initializing Google GenAI model WITH tools: {json.dumps(tools, indent=2)}")
         else:
             logger.debug("Initializing Google GenAI model WITHOUT tools (text-generation only).")
 
         self.model = genai.GenerativeModel(
             model_name,
-            tools=tool_definitions,
-            system_instruction=SYSTEM_INSTRUCTION if load_tools else None,
+            tools=tools,
+            system_instruction=SYSTEM_INSTRUCTION if tools else None,
         )
         self.trimmer = ContextTrimmer(config)
         logger.info(f"GoogleGenAIAdapter initialized with model: {model_name}")

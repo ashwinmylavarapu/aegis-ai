@@ -8,6 +8,8 @@ from loguru import logger
 from typing import Dict, Any, Optional, List
 import asyncio
 import re
+import json
+import stat
 
 from .native_os_adapter import NativeOSAdapter
 
@@ -130,13 +132,19 @@ class AppleScriptOSAdapter(NativeOSAdapter):
             await self._capture_desktop_evidence(f"set_bounds_{app_name}", "error")
             return f"Error setting window bounds: {e.stderr}"
 
-    async def write_file(self, file_path: str, content: str) -> str:
-        """Writes content to a local file using Python's Pathlib."""
-        func_log = log.bind(function_name="write_file", params={"file_path": file_path})
+    async def write_file(self, file_path: str, content: str, executable: bool = False) -> str:
+        """Writes content to a local file, optionally making it executable."""
+        func_log = log.bind(function_name="write_file", params={"file_path": file_path, "executable": executable})
         try:
             p = Path(file_path)
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text(content, encoding='utf-8')
+            
+            if executable:
+                func_log.info(f"Making file executable: {file_path}")
+                # Set permissions to rwxr-xr-x (0o755)
+                os.chmod(file_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+
             func_log.info(f"Successfully wrote {len(content)} characters to '{file_path}'.")
             return f"Successfully wrote content to '{file_path}'."
         except Exception as e:
@@ -226,3 +234,81 @@ class AppleScriptOSAdapter(NativeOSAdapter):
         except subprocess.CalledProcessError as e:
             func_log.error("Screen reading failed", stderr=e.stderr)
             return f"Error during screen reading: {e.stderr}"
+
+    async def read_clipboard(self) -> str:
+        """Reads the current text content from the system clipboard."""
+        func_log = log.bind(function_name="read_clipboard")
+        if sys.platform != "darwin":
+            return "Error: This skill is only supported on macOS."
+        try:
+            func_log.info("Reading from clipboard...")
+            script = "the clipboard"
+            process = subprocess.run(["osascript", "-e", script], check=True, capture_output=True, text=True)
+            content = process.stdout.strip()
+            func_log.success(f"Successfully read {len(content)} characters from clipboard.")
+            return content
+        except subprocess.CalledProcessError as e:
+            func_log.error("Failed to read from clipboard", stderr=e.stderr)
+            return f"Error reading from clipboard: {e.stderr}"
+
+    async def write_clipboard(self, text: str) -> str:
+        """Writes text content to the system clipboard."""
+        func_log = log.bind(function_name="write_clipboard")
+        if sys.platform != "darwin":
+            return "Error: This skill is only supported on macOS."
+        try:
+            func_log.info(f"Writing {len(text)} characters to clipboard...")
+            script = f'set the clipboard to "{text}"'
+            subprocess.run(["osascript", "-e", script], check=True, capture_output=True, text=True)
+            func_log.success("Successfully wrote to clipboard.")
+            return "Successfully wrote text to clipboard."
+        except subprocess.CalledProcessError as e:
+            func_log.error("Failed to write to clipboard", stderr=e.stderr)
+            return f"Error writing to clipboard: {e.stderr}"
+
+    async def run_script(self, script_path: str, args: Optional[List[str]] = None) -> Dict[str, Any]:
+        """Executes a local script and returns its output."""
+        func_log = log.bind(function_name="run_script", params={"script_path": script_path, "args": args})
+        if not os.path.exists(script_path):
+            return {"error": f"Script not found at '{script_path}'"}
+        
+        command = [script_path] + (args or [])
+        try:
+            func_log.info(f"Executing script: {' '.join(command)}")
+            process = await asyncio.create_subprocess_exec(
+                *command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            stdout, stderr = await process.communicate()
+            
+            result = {
+                "return_code": process.returncode,
+                "stdout": stdout.decode('utf-8').strip(),
+                "stderr": stderr.decode('utf-8').strip(),
+            }
+            func_log.info(f"Script finished with return code {result['return_code']}.")
+            return result
+        except Exception as e:
+            func_log.error(f"Failed to run script: {e}")
+            return {"error": str(e)}
+
+    @classmethod
+    def get_tools(cls) -> List[dict]:
+        """Returns a list of tool definitions for the adapter."""
+        return [
+            {"name": "launch_app", "description": "Launches a native application, optionally opening a file.", "parameters": {"type": "OBJECT", "properties": {"app_name": {"type": "STRING"}, "file_path": {"type": "STRING"}}, "required": ["app_name"]}},
+            {"name": "quit_app", "description": "Quits a native application.", "parameters": {"type": "OBJECT", "properties": {"app_name": {"type": "STRING"}}, "required": ["app_name"]}},
+            {"name": "list_windows", "description": "Lists the titles of all open windows for a given application.", "parameters": {"type": "OBJECT", "properties": {"app_name": {"type": "STRING"}}, "required": ["app_name"]}},
+            {"name": "focus_window", "description": "Brings a specific window of an application to the foreground.", "parameters": {"type": "OBJECT", "properties": {"app_name": {"type": "STRING"}, "window_title": {"type": "STRING"}}, "required": ["app_name", "window_title"]}},
+            {"name": "get_window_bounds", "description": "Gets the position and size of a specific window.", "parameters": {"type": "OBJECT", "properties": {"app_name": {"type": "STRING"}, "window_title": {"type": "STRING"}}, "required": ["app_name", "window_title"]}},
+            {"name": "set_window_bounds", "description": "Moves and/or resizes a specific window.", "parameters": {"type": "OBJECT", "properties": {"app_name": {"type": "STRING"}, "window_title": {"type": "STRING"}, "x": {"type": "INTEGER"}, "y": {"type": "INTEGER"}, "width": {"type": "INTEGER"}, "height": {"type": "INTEGER"}}, "required": ["app_name", "window_title"]}},
+            {"name": "write_file", "description": "Writes content to a local file, optionally making it executable.", "parameters": {"type": "OBJECT", "properties": {"file_path": {"type": "STRING"}, "content": {"type": "STRING"}, "executable": {"type": "BOOLEAN"}}, "required": ["file_path", "content"]}},
+            {"name": "delete_file", "description": "Deletes a local file.", "parameters": {"type": "OBJECT", "properties": {"file_path": {"type": "STRING"}}, "required": ["file_path"]}},
+            {"name": "press_key_native", "description": "Presses a key or key combination at the OS level.", "parameters": {"type": "OBJECT", "properties": {"key": {"type": "STRING"}, "modifier": {"type": "STRING"}, "app_name": {"type": "STRING"}}, "required": ["key"]}},
+            {"name": "type_text_native", "description": "Types a string of text at the OS level.", "parameters": {"type": "OBJECT", "properties": {"text": {"type": "STRING"}, "app_name": {"type": "STRING"}}, "required": ["text"]}},
+            {"name": "read_screen_content", "description": "Captures the screen and uses OCR to extract all visible text.", "parameters": {"type": "OBJECT", "properties": {}, "required": []}},
+            {"name": "read_clipboard", "description": "Reads the current text content from the system clipboard.", "parameters": {"type": "OBJECT", "properties": {}, "required": []}},
+            {"name": "write_clipboard", "description": "Writes text content to the system clipboard.", "parameters": {"type": "OBJECT", "properties": {"text": {"type": "STRING"}}, "required": ["text"]}},
+            {"name": "run_script", "description": "Executes a local script and returns its output.", "parameters": {"type": "OBJECT", "properties": {"script_path": {"type": "STRING"}, "args": {"type": "ARRAY", "items": {"type": "STRING"}}}, "required": ["script_path"]}},
+        ]

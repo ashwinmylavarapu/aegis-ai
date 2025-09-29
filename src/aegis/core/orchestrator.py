@@ -3,7 +3,7 @@ import asyncio
 import os
 import json
 from loguru import logger
-from typing import List
+from typing import List, Dict, Any
 import uuid
 import copy
 
@@ -25,11 +25,34 @@ class Orchestrator:
     def __init__(self, config):
         self.config = config
         self.browser_adapter = get_browser_adapter(config)
-        self.llm_adapter = get_llm_adapter(config)
         self.omni_parser_adapter = get_omni_parser_adapter(config)
         self.native_os_adapter = get_native_os_adapter(config)
+        
+        self.tool_dispatch_map, all_tool_definitions = self._build_tool_registries()
+        
+        self.llm_adapter = get_llm_adapter(config, tools=all_tool_definitions)
+        
         self.context_manager = ContextManager()
-        logger.info("Orchestrator initialized with all adapters.")
+        logger.info("Orchestrator initialized with all adapters and unified tool registry.")
+
+    def _build_tool_registries(self) -> (Dict[str, Any], List[Dict[str, Any]]):
+        """Creates a dispatch map and a list of tool definitions for the LLM."""
+        dispatch_map = {}
+        definitions = []
+
+        # Aggregate from all adapters that have a get_tools method
+        adapters_with_tools = [self.browser_adapter, self.native_os_adapter]
+        
+        for adapter in adapters_with_tools:
+            if hasattr(adapter, 'get_tools') and callable(getattr(adapter, 'get_tools')):
+                adapter_tools = adapter.get_tools()
+                definitions.extend(adapter_tools)
+                for tool in adapter_tools:
+                    dispatch_map[tool['name']] = adapter
+        
+        logger.info(f"Built tool registry with {len(definitions)} tools.")
+        logger.debug(f"Available tools: {list(dispatch_map.keys())}")
+        return dispatch_map, definitions
 
     async def execute_playbook(self, playbook: Playbook):
         playbook_run_id = f"playbook-run-{uuid.uuid4()}"
@@ -86,7 +109,7 @@ class Orchestrator:
         step_log.debug("Executing agent step", requires_vision=requires_vision)
 
         if requires_vision:
-            pass
+            pass # Vision logic remains the same
         else:
             aegis_context.messages.append(Message(role="user", content=step.prompt))
 
@@ -104,12 +127,11 @@ class Orchestrator:
 
     async def execute_skill_step(self, step: Step, aegis_context: AegisContext, step_log: logger):
         step_log.debug("Executing skill", adapter_name=step.skill_name, function_name=step.function_name, params=step.params)
-        adapter = None
-        if step.skill_name == "native_os":
-            adapter = self.native_os_adapter
+        
+        adapter = self.tool_dispatch_map.get(step.function_name)
 
         if not adapter or not hasattr(adapter, step.function_name):
-            error_msg = f"Function '{step.function_name}' not found in adapter '{step.skill_name}'."
+            error_msg = f"Function '{step.function_name}' not found in any registered adapter."
             step_log.error(error_msg)
             aegis_context.messages.append(Message(role="user", content=f"Error: {error_msg}"))
             return
@@ -118,7 +140,7 @@ class Orchestrator:
             skill_function = getattr(adapter, step.function_name)
             result = await skill_function(**(step.params or {}))
             step_log.info("Skill executed successfully.")
-            aegis_context.messages.append(Message(role="user", content=f"Skill '{step.name}' completed. Result: {result}"))
+            aegis_context.messages.append(Message(role="user", content=f"Skill '{step.name}' completed. Result: {json.dumps(result) if isinstance(result, dict) else result}"))
         except Exception as e:
             step_log.error("Error executing skill", error=str(e))
             aegis_context.messages.append(Message(role="user", content=f"Error executing skill '{step.name}': {e}"))
@@ -126,21 +148,22 @@ class Orchestrator:
     async def handle_tool_calls(self, tool_calls: list[ToolCall], aegis_context: AegisContext, step_log: logger):
         step_log.debug(f"Handling {len(tool_calls)} tool calls.")
         tool_responses = []
-        adapter = self.browser_adapter
         
         for call in tool_calls:
             call_log = step_log.bind(tool_name=call.function_name, tool_args=call.function_args)
             
-            if hasattr(adapter, call.function_name):
+            adapter = self.tool_dispatch_map.get(call.function_name)
+            
+            if adapter and hasattr(adapter, call.function_name):
                 tool_function = getattr(adapter, call.function_name)
                 try:
                     result = await tool_function(**call.function_args)
-                    tool_responses.append(ToolResponse(tool_call_id=call.id, tool_name=call.function_name, content=str(result) or "Success"))
+                    tool_responses.append(ToolResponse(tool_call_id=call.id, tool_name=call.function_name, content=json.dumps(result) if isinstance(result, dict) else str(result) or "Success"))
                 except Exception as e:
                     call_log.error("Error executing tool", error=str(e))
                     tool_responses.append(ToolResponse(tool_call_id=call.id, tool_name=call.function_name, content=f"Error: {e}"))
             else:
-                call_log.warning("Tool not found in browser adapter.")
+                call_log.warning(f"Tool '{call.function_name}' not found in any adapter.")
                 tool_responses.append(ToolResponse(tool_call_id=call.id, tool_name=call.function_name, content="Error: Tool not found"))
         
         if aegis_context.messages and aegis_context.messages[-1].role == "assistant":

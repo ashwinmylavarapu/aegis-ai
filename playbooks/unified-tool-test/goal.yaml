@@ -1,0 +1,62 @@
+name: "Test Unified Tool Registry and New OS Skills"
+description: "Tests clipboard interaction and script execution via the unified tool registry."
+persona: "You are a testing agent verifying native OS capabilities."
+
+steps:
+  - name: "Create an executable test script"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "write_file"
+    params:
+      file_path: "/tmp/aegis_test_script.sh"
+      content: |
+        #!/bin/bash
+        # This script appends the clipboard content to a test file.
+        pbpaste >> /tmp/aegis_clipboard_test.txt
+        echo "Script executed."
+      executable: true
+
+  - name: "Write initial content to a file"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "write_file"
+    params:
+      file_path: "/tmp/aegis_clipboard_test.txt"
+      content: "Line 1 from file.\n"
+
+  - name: "Write text to clipboard"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "write_clipboard"
+    params:
+      text: "Line 2 from clipboard."
+
+  - name: "Execute the test script"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "run_script"
+    params:
+      script_path: "/tmp/aegis_test_script.sh"
+
+  - name: "Read the clipboard again"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "read_clipboard"
+  
+  - name: "Human Verification"
+    type: "human_intervention"
+    prompt: "Please verify the agent's context. The last message should contain the output of the script. Then, check the file '/tmp/aegis_clipboard_test.txt'. It should contain two lines."
+
+  - name: "Clean up script and test file"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "delete_file"
+    params:
+      file_path: "/tmp/aegis_test_script.sh"
+  
+  - name: "Clean up test file"
+    type: "skill_step"
+    skill_name: "native_os"
+    function_name: "delete_file"
+    params:
+      file_path: "/tmp/aegis_clipboard_test.txt"
