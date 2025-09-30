@@ -33,6 +33,22 @@ steps:
     type: "agent_step"
     prompt: "Navigate to https://gemini.google.com/u/2/app"
 
+  # --- Task 0:  ---
+  - name: "Task 0 - Generate Base Image "
+    type: "run_routine"
+    routine_name: "generate_first_image_with_reference"
+    loop_with:
+      - description: "Base close portrait."
+        prompt_text: |
+          Generate an Image of most stunning South Indian woman. 
+          A close portrait with frontal view profile facing the viewer.
+          A natural individual, not a model with slender build and soft facial features.
+
+  - name: "Human Verification 1"
+    type: "human_intervention"
+    prompt: "Please verify the Base close portrait."
+
+
   # --- Task 1: Straight Profile Headshots ---
   - name: "Task 1 - Generate Images"
     type: "run_routine"
